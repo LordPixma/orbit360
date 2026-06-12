@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orbit360 · SpaceX ecosystem console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --space:#0A0E14; --panel:#121821; --panel-2:#0F151D; --grid:#1F2A37;
+    --ink:#E6EDF3; --muted:#7D8A9C; --muted-2:#586374;
+    --nominal:#3FB950; --caution:#D29922; --critical:#F85149;
+    --live:#39D0D8; --ion:#2F81F7;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(47,129,247,.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(57,208,216,.06), transparent 60%),
+      var(--space);
+    color:var(--ink); font-family:var(--body);
+    -webkit-font-smoothing:antialiased; min-height:100vh; padding:14px;
+  }
+  a{color:inherit}
+  .mono{font-family:var(--mono)}
+  .lbl{font-family:var(--mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+  .up{color:var(--nominal)} .down{color:var(--critical)} .warn{color:var(--caution)}
+
+  /* ---- status strip ---- */
+  .strip{display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    border:1px solid var(--grid); border-radius:8px; padding:11px 16px;
+    background:linear-gradient(180deg,rgba(20,28,38,.9),rgba(15,21,29,.9));}
+  .wordmark{font-family:var(--disp); font-weight:700; letter-spacing:.04em; font-size:16px}
+  .wordmark b{color:var(--live)}
+  .strip .sep{width:1px; height:26px; background:var(--grid)}
+  .callsign{font-family:var(--mono); font-size:12px; color:var(--muted)}
+  .callsign b{color:var(--ink); font-weight:600}
+  .strip .price{font-family:var(--mono); font-weight:600; font-size:18px}
+  .strip .chg{font-family:var(--mono); font-size:13px}
+  .sync{margin-left:auto; display:flex; align-items:center; gap:9px}
+  .dot{width:7px; height:7px; border-radius:50%; background:var(--live);
+    box-shadow:0 0 0 0 rgba(57,208,216,.6); animation:ping 2.4s infinite}
+  @keyframes ping{0%{box-shadow:0 0 0 0 rgba(57,208,216,.55)}70%{box-shadow:0 0 0 7px rgba(57,208,216,0)}100%{box-shadow:0 0 0 0 rgba(57,208,216,0)}}
+
+  .preview{display:none; margin:10px 0 0; border:1px solid rgba(210,153,34,.4);
+    background:rgba(210,153,34,.08); color:var(--caution); border-radius:7px;
+    padding:8px 13px; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em}
+
+  /* ---- grid ---- */
+  .grid{display:grid; gap:12px; margin-top:12px;
+    grid-template-columns:repeat(12,1fr);}
+  .card{border:1px solid var(--grid); border-radius:9px; background:var(--panel);
+    padding:14px 15px; min-width:0; position:relative; overflow:hidden}
+  .card::before{content:""; position:absolute; inset:0 auto auto 0; height:2px; width:100%;
+    background:linear-gradient(90deg,transparent,rgba(57,208,216,.0))}
+  .card h3{margin:0 0 12px; display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:500}
+  .card h3 .g{color:var(--ion)}
+  .pill{margin-left:auto; font-family:var(--mono); font-size:10px; letter-spacing:.1em;
+    padding:2px 8px; border-radius:20px; border:1px solid var(--grid)}
+  .pill.nominal{color:var(--nominal); border-color:rgba(63,185,80,.4); background:rgba(63,185,80,.08)}
+  .pill.caution{color:var(--caution); border-color:rgba(210,153,34,.4); background:rgba(210,153,34,.08)}
+  .pill.critical{color:var(--critical); border-color:rgba(248,81,73,.4); background:rgba(248,81,73,.08)}
+
+  .col-3{grid-column:span 3} .col-4{grid-column:span 4} .col-5{grid-column:span 5}
+  .col-6{grid-column:span 6} .col-7{grid-column:span 7} .col-8{grid-column:span 8} .col-12{grid-column:span 12}
+  @media(max-width:920px){ .grid{grid-template-columns:repeat(6,1fr)}
+    .col-3,.col-4,.col-5{grid-column:span 3} .col-6,.col-7,.col-8{grid-column:span 6} }
+  @media(max-width:560px){ .grid{grid-template-columns:repeat(2,1fr)}
+    .card{grid-column:span 2 !important} .sync{margin-left:0} }
+
+  /* hero numbers */
+  .big{font-family:var(--mono); font-weight:600; font-size:40px; line-height:1; letter-spacing:-.01em}
+  .sub{font-family:var(--mono); font-size:13px; margin-top:7px}
+  .kv{display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px dashed var(--grid); font-family:var(--mono); font-size:12.5px}
+  .kv:last-child{border-bottom:0}
+  .kv .k{color:var(--muted)} .kv .v{color:var(--ink); font-weight:500}
+
+  /* pulse gauge */
+  .gauge-wrap{display:flex; align-items:center; gap:16px}
+  .gauge{flex:0 0 auto}
+  .gauge .score{font-family:var(--mono); font-weight:600; font-size:34px}
+  .gauge .of{font-family:var(--mono); font-size:11px; fill:var(--muted)}
+  .gauge-meta{flex:1 1 auto; min-width:0}
+  .comp{display:flex; align-items:center; gap:8px; margin:6px 0; font-family:var(--mono); font-size:11px}
+  .comp .bar{flex:1; height:5px; border-radius:3px; background:#1b2531; overflow:hidden}
+  .comp .bar i{display:block; height:100%; background:var(--ion)}
+  .comp .nm{color:var(--muted); width:78px; flex:0 0 auto}
+
+  /* treemap */
+  .tm{width:100%; height:230px}
+  .tm rect{stroke:var(--space); stroke-width:1.5; rx:3}
+  .tm text{font-family:var(--mono); pointer-events:none}
+  .tm .sym{font-weight:600; font-size:12px}
+  .tm .pct{font-size:10px; opacity:.85}
+  .legend{display:flex; gap:14px; margin-top:8px; flex-wrap:wrap}
+  .legend span{font-family:var(--mono); font-size:10px; color:var(--muted); display:flex; align-items:center; gap:5px}
+  .legend i{width:9px; height:9px; border-radius:2px; display:inline-block}
+
+  /* news */
+  .feed{max-height:300px; overflow:auto; margin:-4px -4px 0; padding:0 4px}
+  .feed::-webkit-scrollbar{width:6px} .feed::-webkit-scrollbar-thumb{background:var(--grid); border-radius:3px}
+  .news{display:block; padding:10px 0; border-bottom:1px solid var(--grid); text-decoration:none}
+  .news:last-child{border-bottom:0}
+  .news .h{font-size:13px; color:var(--ink); line-height:1.35}
+  .news:hover .h{color:var(--live)}
+  .news .m{display:flex; gap:8px; align-items:center; margin-top:5px}
+  .tag{font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; border:1px solid var(--grid); color:var(--muted)}
+  .tag.launch{color:var(--ion); border-color:rgba(47,129,247,.4)}
+  .tag.contract{color:var(--nominal); border-color:rgba(63,185,80,.4)}
+  .tag.starlink{color:var(--live); border-color:rgba(57,208,216,.4)}
+  .tag.regulatory{color:var(--caution); border-color:rgba(210,153,34,.4)}
+  .tag.ai{color:#b389f9; border-color:rgba(179,137,249,.4)}
+  .news .src{font-family:var(--mono); font-size:10px; color:var(--muted-2)}
+
+  /* divergence rows */
+  .div-row{display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px dashed var(--grid); font-family:var(--mono); font-size:12px}
+  .div-row:last-child{border-bottom:0}
+  .div-row .sym{font-weight:600; width:60px}
+  .empty{font-family:var(--mono); font-size:11.5px; color:var(--muted-2); line-height:1.5}
+  .spark{width:100%; height:34px; margin-top:8px}
+  .foot{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted-2); letter-spacing:.06em}
+  @media(prefers-reduced-motion:reduce){ .dot{animation:none} }
+</style>
+</head>
+<body>
+  <div class="strip">
+    <div class="wordmark">ORBIT<b>//</b>360</div>
+    <div class="sep"></div>
+    <div class="callsign">CALLSIGN <b>SPCX</b> · NASDAQ</div>
+    <div class="price" id="hdrPrice">—</div>
+    <div class="chg" id="hdrChg">—</div>
+    <div class="sync">
+      <span class="dot" id="liveDot"></span>
+      <span class="lbl" id="syncLbl">SYNC —</span>
+    </div>
+  </div>
+  <div class="preview" id="previewBanner">PREVIEW MODE — sample telemetry. Deploy behind the Worker with your Finnhub key for live data.</div>
+
+  <div class="grid">
+    <!-- HERO: market -->
+    <div class="card col-4">
+      <h3><span class="g">◢</span> Market</h3>
+      <div class="big" id="mPrice">—</div>
+      <div class="sub" id="mChg">—</div>
+      <div style="margin-top:12px">
+        <div class="kv"><span class="k">OPEN</span><span class="v" id="mOpen">—</span></div>
+        <div class="kv"><span class="k">DAY RANGE</span><span class="v" id="mRange">—</span></div>
+        <div class="kv"><span class="k">PREV CLOSE</span><span class="v" id="mPrev">—</span></div>
+        <div class="kv"><span class="k">MARKET CAP</span><span class="v" id="mCap">—</span></div>
+      </div>
+    </div>
+
+    <!-- SIGNATURE: pulse -->
+    <div class="card col-8">
+      <h3><span class="g">◢</span> SpaceX Pulse — operational health vs the tape <span class="pill" id="pulsePill">—</span></h3>
+      <div class="gauge-wrap">
+        <svg class="gauge" id="gauge" width="170" height="150" viewBox="0 0 170 150"></svg>
+        <div class="gauge-meta" id="pulseComps"></div>
+      </div>
+      <svg class="spark" id="pulseSpark" viewBox="0 0 600 40" preserveAspectRatio="none"></svg>
+      <div class="lbl" style="text-align:center; margin-top:2px">PULSE (CYAN) VS SPCX PRICE (BLUE) · BUILDS OVER TIME</div>
+    </div>
+
+    <!-- launch ops -->
+    <div class="card col-3">
+      <h3><span class="g">◢</span> Launch ops</h3>
+      <div class="big" id="lYtd">—</div>
+      <div class="sub">LAUNCHES YTD</div>
+      <div style="margin-top:12px">
+        <div class="kv"><span class="k">SUCCESS RATE</span><span class="v" id="lRate">—</span></div>
+        <div class="kv"><span class="k">DAYS SINCE LAST</span><span class="v" id="lDays">—</span></div>
+        <div class="kv"><span class="k">NEXT</span><span class="v" id="lNext" style="max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">—</span></div>
+      </div>
+    </div>
+
+    <!-- constellation -->
+    <div class="card col-3">
+      <h3><span class="g">◢</span> Constellation</h3>
+      <div class="big" id="cCount">—</div>
+      <div class="sub">STARLINK SATS IN ORBIT</div>
+      <svg class="spark" id="cSpark" viewBox="0 0 280 34" preserveAspectRatio="none"></svg>
+      <div class="kv" style="margin-top:6px"><span class="k">CHANGE (24H)</span><span class="v" id="cDelta">—</span></div>
+    </div>
+
+    <!-- contracts -->
+    <div class="card col-6">
+      <h3><span class="g">◢</span> Federal awards <span class="pill" id="ctPill">—</span></h3>
+      <div id="ctList"></div>
+    </div>
+
+    <!-- treemap heat -->
+    <div class="card col-8">
+      <h3><span class="g">◢</span> Ecosystem heat — sized by market cap, coloured by today's move</h3>
+      <svg class="tm" id="treemap" preserveAspectRatio="none"></svg>
+      <div class="legend">
+        <span><i style="background:var(--critical)"></i> −3%+</span>
+        <span><i style="background:#7a3b3f"></i> down</span>
+        <span><i style="background:#2b3440"></i> flat</span>
+        <span><i style="background:#2f5d43"></i> up</span>
+        <span><i style="background:var(--nominal)"></i> +3%+</span>
+      </div>
+    </div>
+
+    <!-- correlation / divergence -->
+    <div class="card col-4">
+      <h3><span class="g">◢</span> Divergence watch</h3>
+      <div id="divList"></div>
+    </div>
+
+    <!-- news -->
+    <div class="card col-12">
+      <h3><span class="g">◢</span> Signal — SpaceX &amp; ecosystem news</h3>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+
+  <div class="foot" id="foot">ORBIT//360 · monitor the rocket, not just the ticker</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Sample telemetry — used when the /api backend isn't reachable (e.g. preview).
+// Numbers reflect SPCX's IPO-day debut for a representative look.
+// ---------------------------------------------------------------------------
+const SAMPLE = {
+  builtAt: Date.now(), preview:true,
+  quotes:{
+    SPCX:{ok:true,price:172.40,change:37.40,changePct:27.7,open:150.0,high:176.5,low:149.2,prevClose:135.0,marketCap:2030000},
+    SATS:{ok:true,changePct:6.1,marketCap:11200}, STM:{ok:true,changePct:2.3,marketCap:24800},
+    AVGO:{ok:true,changePct:1.4,marketCap:812000}, TMUS:{ok:true,changePct:0.8,marketCap:248000},
+    RKLB:{ok:true,changePct:9.4,marketCap:18600}, ASTS:{ok:true,changePct:-3.2,marketCap:14100},
+    RDW:{ok:true,changePct:4.7,marketCap:2300}, LUNR:{ok:true,changePct:5.9,marketCap:1900},
+    BA:{ok:true,changePct:-0.6,marketCap:138000}, LMT:{ok:true,changePct:-1.1,marketCap:108000},
+    NOC:{ok:true,changePct:0.3,marketCap:74000}, NVDA:{ok:true,changePct:2.0,marketCap:3380000},
+    'FTC.L':{ok:true,changePct:7.8,marketCap:650}, '347700.KS':{ok:true,changePct:11.2,marketCap:1500},
+    '6285.TW':{ok:true,changePct:4.1,marketCap:1900}, 'MDA.TO':{ok:true,changePct:2.6,marketCap:3000},
+    'ETL.PA':{ok:true,changePct:-1.8,marketCap:3300}, 'AVIO.MI':{ok:true,changePct:1.1,marketCap:1400},
+    'AIR.PA':{ok:true,changePct:-0.4,marketCap:170000}
+  },
+  pulse:{score:76,status:'nominal',components:{
+    launch:{value:.88,weight:.30}, constellation:{value:.72,weight:.25},
+    ecosystem:{value:.69,weight:.20}, contracts:{value:.50,weight:.15}}},
+  pulseHistory:[{score:61,spcx:135},{score:64,spcx:150},{score:69,spcx:158},{score:72,spcx:163},{score:74,spcx:168},{score:76,spcx:172.4}],
+  launchOps:{ytd:91,successRate:99,daysSinceLast:2,
+    nextLaunch:{name:'Starlink Group 11-7',net:'2026-06-14T08:40:00Z'}},
+  constellation:{count:8912,delta:54,history:[8740,8772,8772,8801,8845,8858,8858,8902,8912]},
+  contracts:{last30:2,awards:[
+    {agency:'Space Force',amount:733000000,date:'2026-05-28',description:'NSSL Phase 3 launch services task order'},
+    {agency:'NASA',amount:264000000,date:'2026-05-12',description:'Crew rotation services extension'},
+    {agency:'NRO',amount:0,date:'2026-04-30',description:'Proliferated architecture launch support'}]},
+  correlations:{RKLB:.74,ASTS:.66,RDW:.58,LUNR:.61,SATS:.43,NVDA:.39,BA:.12,LMT:-.05,NOC:.08,AVGO:.22,TMUS:.18},
+  divergences:[{symbol:'ASTS',corr:.66,move:-3.2,expected:1}],
+  tickers:[]
+};
+
+const TIERS={subject:'SUBJECT',direct:'DIRECT',partner:'PARTNER',pureplay:'PURE-PLAY',legacy:'LEGACY',ai:'AI INFRA'};
+const NAMES={SPCX:'SpaceX',SATS:'EchoStar',STM:'STMicro',AVGO:'Broadcom',TMUS:'T-Mobile',RKLB:'Rocket Lab',ASTS:'AST SpaceMobile',RDW:'Redwire',LUNR:'Intuitive Mach.',BA:'Boeing',LMT:'Lockheed',NOC:'Northrop',NVDA:'NVIDIA'};
+
+// ---- helpers --------------------------------------------------------------
+const $=id=>document.getElementById(id);
+const fmt=(n,d=2)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const usd=n=>n==null?'—':(n>=1e9?'$'+(n/1e9).toFixed(1)+'B':n>=1e6?'$'+(n/1e6).toFixed(1)+'M':'$'+Number(n).toFixed(2));
+const capUsd=m=>m==null?'—':(m>=1e6?'$'+(m/1e6).toFixed(2)+'T':m>=1e3?'$'+(m/1e3).toFixed(1)+'B':'$'+m.toFixed(0)+'M'); // Finnhub cap is in $M
+const pct=p=>p==null?'—':(p>0?'+':'')+p.toFixed(2)+'%';
+const cls=p=>p==null?'':p>0?'up':p<0?'down':'';
+function timeAgo(ts){const s=(Date.now()-ts*1000)/1000;if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+
+// heat colour from % move
+function heat(p){
+  if(p==null) return '#202a35';
+  const x=Math.max(-3,Math.min(3,p))/3;
+  if(x>0){const t=x;return mix([43,52,64],[63,185,80],t);}
+  const t=-x;return mix([43,52,64],[248,81,73],t);
+}
+const mix=(a,b,t)=>`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')})`;
+
+// ---- gauge ----------------------------------------------------------------
+function polar(cx,cy,r,deg){const a=(deg-90)*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+function arc(cx,cy,r,a0,a1){const[x0,y0]=polar(cx,cy,r,a0),[x1,y1]=polar(cx,cy,r,a1);const large=a1-a0<=180?0:1;return`M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;}
+function drawGauge(score,status){
+  const g=$('gauge');const cx=85,cy=95,r=66;const start=-120,end=120;
+  const col=status==='nominal'?'var(--nominal)':status==='caution'?'var(--caution)':status==='critical'?'var(--critical)':'var(--muted)';
+  const frac=score==null?0:score/100;const a1=start+(end-start)*frac;
+  g.innerHTML=`
+    <path d="${arc(cx,cy,r,start,end)}" fill="none" stroke="#1b2531" stroke-width="11" stroke-linecap="round"/>
+    <path d="${arc(cx,cy,r,start,Math.max(start+0.1,a1))}" fill="none" stroke="${col}" stroke-width="11" stroke-linecap="round"/>
+    ${score==null?'':`<circle cx="${polar(cx,cy,r,a1)[0]}" cy="${polar(cx,cy,r,a1)[1]}" r="6" fill="${col}"/>`}
+    <text class="score" x="85" y="92" text-anchor="middle" fill="var(--ink)">${score==null?'—':score}</text>
+    <text class="of" x="85" y="110" text-anchor="middle">/ 100 · ${status.toUpperCase()}</text>`;
+}
+
+// ---- sparkline ------------------------------------------------------------
+function spark(el,vals,color,w=600,h=40){
+  if(!vals||vals.length<2){$(el).innerHTML='';return;}
+  const min=Math.min(...vals),max=Math.max(...vals),rng=max-min||1;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1))*w},${h-4-((v-min)/rng)*(h-8)}`).join(' ');
+  $(el).innerHTML=`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+}
+function sparkDual(el,a,b,ca,cb,w=600,h=40){
+  const norm=v=>{const mn=Math.min(...v),mx=Math.max(...v),r=mx-mn||1;return v.map(x=>(x-mn)/r);};
+  const line=(v,c)=>{const n=norm(v);return`<polyline points="${n.map((x,i)=>`${(i/(n.length-1))*w},${h-3-x*(h-6)}`).join(' ')}" fill="none" stroke="${c}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;};
+  $(el).innerHTML=(a&&a.length>1?line(a,ca):'')+(b&&b.length>1?line(b,cb):'');
+}
+
+// ---- squarified treemap ---------------------------------------------------
+function treemap(items,W,H){
+  // items: [{sym,val,pct}], val>0. Returns rects [{x,y,w,h,...}]
+  items=items.filter(i=>i.val>0).sort((a,b)=>b.val-a.val);
+  const total=items.reduce((s,i)=>s+i.val,0); if(!total) return [];
+  items.forEach(i=>i.area=i.val/total*W*H);
+  const out=[]; let x=0,y=0,w=W,h=H,row=[],i=0;
+  const worst=(row,len)=>{const s=row.reduce((a,r)=>a+r.area,0);const mx=Math.max(...row.map(r=>r.area)),mn=Math.min(...row.map(r=>r.area));return Math.max((len*len*mx)/(s*s),(s*s)/(len*len*mn));};
+  while(i<items.length){
+    const len=Math.min(w,h);
+    const test=[...row,items[i]];
+    if(row.length===0||worst(test,len)<=worst(row,len)){row.push(items[i]);i++;}
+    else{layout(row);}
+  }
+  layout(row);
+  function layout(row){
+    if(!row.length)return;
+    const s=row.reduce((a,r)=>a+r.area,0);
+    if(w<=h){ const rh=s/w; let cx=x; row.forEach(r=>{const rw=r.area/rh; out.push({...r,x:cx,y,w:rw,h:rh}); cx+=rw;}); y+=rh; h-=rh; }
+    else{ const rw=s/h; let cy=y; row.forEach(r=>{const rh=r.area/rw; out.push({...r,x,y:cy,w:rw,h:rh}); cy+=rh;}); x+=rw; w-=rw; }
+    row.length=0;
+  }
+  return out;
+}
+function drawTreemap(quotes){
+  const el=$('treemap'); const W=el.clientWidth||760, H=230; el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const items=Object.entries(quotes).filter(([s,d])=>d&&d.ok&&d.marketCap>0)
+    .map(([sym,d])=>({sym,val:d.marketCap,pct:d.changePct}));
+  // damp SPCX/NVDA so mega-caps don't swallow the map (sqrt scaling keeps it readable)
+  items.forEach(i=>i.val=Math.sqrt(i.val));
+  const rects=treemap(items,W,H);
+  el.innerHTML=rects.map(r=>{
+    const big=r.w>56&&r.h>30; const fs=r.w>90?12:11;
+    return `<g>
+      <rect x="${r.x}" y="${r.y}" width="${Math.max(0,r.w-1.5)}" height="${Math.max(0,r.h-1.5)}" fill="${heat(r.pct)}"></rect>
+      ${big?`<text class="sym" x="${r.x+7}" y="${r.y+18}" fill="#fff" style="font-size:${fs}px">${r.sym.split('.')[0]}</text>
+            <text class="pct" x="${r.x+7}" y="${r.y+33}" fill="rgba(255,255,255,.85)">${pct(r.pct)}</text>`:''}
+    </g>`;
+  }).join('');
+}
+
+// ---- render ---------------------------------------------------------------
+function render(d){
+  const q=d.quotes||{}; const spcx=q.SPCX||{};
+  // header + market
+  $('hdrPrice').textContent=spcx.price!=null?'$'+fmt(spcx.price):'—';
+  $('hdrChg').innerHTML=`<span class="${cls(spcx.changePct)}">${pct(spcx.changePct)}</span>`;
+  $('mPrice').textContent=spcx.price!=null?'$'+fmt(spcx.price):'—';
+  $('mChg').innerHTML=`<span class="${cls(spcx.changePct)}">${spcx.change!=null?(spcx.change>0?'+':'')+fmt(spcx.change):''} ${pct(spcx.changePct)}</span>`;
+  $('mOpen').textContent=spcx.open!=null?'$'+fmt(spcx.open):'—';
+  $('mRange').textContent=spcx.low!=null?'$'+fmt(spcx.low)+' – $'+fmt(spcx.high):'—';
+  $('mPrev').textContent=spcx.prevClose!=null?'$'+fmt(spcx.prevClose):'—';
+  $('mCap').textContent=capUsd(spcx.marketCap);
+
+  // pulse
+  const p=d.pulse||{};
+  drawGauge(p.score,p.status||'unknown');
+  const pill=$('pulsePill'); pill.textContent=(p.status||'—').toUpperCase(); pill.className='pill '+(p.status||'');
+  const compNames={launch:'Launch',constellation:'Sats',ecosystem:'Ecosystem',contracts:'Contracts'};
+  $('pulseComps').innerHTML=Object.entries(p.components||{}).map(([k,c])=>
+    `<div class="comp"><span class="nm">${compNames[k]||k}</span><span class="bar"><i style="width:${Math.round(c.value*100)}%"></i></span><span style="color:var(--muted);width:34px;text-align:right">${Math.round(c.value*100)}</span></div>`).join('')
+    ||'<div class="empty">Pulse warms up as operational feeds report.</div>';
+  const ph=d.pulseHistory||[];
+  sparkDual('pulseSpark',ph.map(x=>x.score),ph.map(x=>x.spcx).filter(v=>v!=null),'var(--live)','var(--ion)');
+
+  // launch ops
+  const l=d.launchOps||{};
+  $('lYtd').textContent=l.ytd??'—';
+  $('lRate').innerHTML=l.successRate!=null?`<span class="${l.successRate>=95?'up':'warn'}">${l.successRate}%</span>`:'—';
+  $('lDays').textContent=l.daysSinceLast!=null?l.daysSinceLast+'d':'—';
+  $('lNext').textContent=l.nextLaunch?l.nextLaunch.name:'—';
+
+  // constellation
+  const c=d.constellation||{};
+  $('cCount').textContent=c.count!=null?c.count.toLocaleString('en-US'):'—';
+  $('cDelta').innerHTML=c.delta!=null?`<span class="${c.delta>=0?'up':'down'}">${c.delta>=0?'+':''}${c.delta}</span>`:'—';
+  spark('cSpark',c.history,'var(--live)',280,34);
+
+  // contracts
+  const ct=d.contracts||{};
+  $('ctPill').textContent=(ct.last30??0)+' NEW · 30D'; $('ctPill').className='pill '+((ct.last30>0)?'nominal':'');
+  $('ctList').innerHTML=(ct.awards||[]).slice(0,4).map(a=>
+    `<div class="kv"><span class="k" style="max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.agency||'—'} · ${a.description||''}</span><span class="v">${a.amount?usd(a.amount):'—'}</span></div>`).join('')
+    ||'<div class="empty">No federal awards in the lookback window.</div>';
+
+  // treemap
+  drawTreemap(q);
+
+  // divergence
+  const dv=d.divergences||[];
+  $('divList').innerHTML=dv.length?dv.map(x=>
+    `<div class="div-row"><span class="sym">${x.symbol}</span><span style="color:var(--muted)">ρ ${x.corr>=0?'+':''}${x.corr}</span><span class="${cls(x.move)}" style="margin-left:auto">${pct(x.move)}</span></div>`).join('')
+    +`<div class="empty" style="margin-top:8px">Names that usually track SPCX but broke ranks today — worth a look.</div>`
+    :'<div class="empty">No divergences. The complex is moving together (or history is still warming up — correlation needs ~5 sessions).</div>';
+
+  // news
+  const feed=$('feed'); const news=d.news||[];
+  feed.innerHTML=news.length?news.map(n=>
+    `<a class="news" href="${n.url||'#'}" target="_blank" rel="noopener">
+      <div class="h">${n.headline||''}</div>
+      <div class="m"><span class="tag ${n.category||''}">${(n.category||'general')}</span>
+      <span class="src">${n.source||''} · ${n.datetime?timeAgo(n.datetime):''}</span></div>
+    </a>`).join('')
+    :'<div class="empty">Feed quiet, or live news not yet wired. Headlines populate from Finnhub once deployed.</div>';
+
+  // chrome
+  const t=new Date(d.builtAt||Date.now());
+  $('syncLbl').textContent='SYNC '+t.toTimeString().slice(0,8)+(d.preview?' · SAMPLE':' · LIVE');
+  $('previewBanner').style.display=d.preview?'block':'none';
+  $('liveDot').style.background=d.preview?'var(--caution)':'var(--live)';
+}
+
+// ---- boot + refresh -------------------------------------------------------
+async function load(){
+  try{
+    const r=await fetch('/api/dashboard',{cache:'no-store'});
+    if(!r.ok) throw new Error('api');
+    const d=await r.json();
+    if(!d || !d.quotes) throw new Error('shape');
+    render(d);
+  }catch(e){
+    render(SAMPLE); // preview / offline fallback
+  }
+}
+load();
+setInterval(load,60000);
+window.addEventListener('resize',()=>{ /* redraw treemap on resize */ load(); });
+</script>
+</body>
+</html>

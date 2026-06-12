@@ -1,0 +1,3 @@
+# Copy to .dev.vars for local `wrangler dev`. NEVER commit .dev.vars.
+FINNHUB_API_KEY="your-finnhub-key-here"
+# TWELVEDATA_API_KEY="your-twelvedata-key-here"   # global tickers (later)

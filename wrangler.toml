@@ -1,0 +1,35 @@
+name = "orbit360"
+main = "src/index.js"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static dashboard (served for any non-/api route)
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Cache + history store. Create with:  wrangler kv namespace create ORBIT_KV
+# then paste the id below.
+[[kv_namespaces]]
+binding = "ORBIT_KV"
+id = "PASTE_YOUR_KV_ID_HERE"
+
+# Native email alerts (free). Requires Email Routing enabled on the domain and
+# the destination address verified in the Cloudflare dashboard.
+[[send_email]]
+name = "SEND_EMAIL"
+destination_address = "you@yourdomain.com"
+
+# Poll + alert every 10 minutes.
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+# ALERT_FROM must be on a domain you control on Cloudflare.
+# ALERT_TO must equal the verified destination address above.
+ALERT_FROM = "orbit360@yourdomain.com"
+ALERT_TO = "you@yourdomain.com"
+
+# NOTE: FINNHUB_API_KEY is a SECRET — never put it here. Set it with:
+#   wrangler secret put FINNHUB_API_KEY
+# TWELVEDATA_API_KEY (global tickers) is added the same way when you're ready.
