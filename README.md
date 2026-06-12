@@ -19,6 +19,7 @@ complex — financial *and* operational. Built on Cloudflare Workers.
 | **Launch Ops** | Launch Library 2 | Launches YTD, success rate, days-since-last, next on manifest |
 | **Constellation** | CelesTrak | Live Starlink satellites in orbit + 24h delta |
 | **Federal Awards** | USASpending | New NASA / Space Force / NRO awards (leading revenue signal) |
+| **Regulatory Radar** | RSS (keyless) | Country-by-country market-access board + live docket/licensing stream |
 | **Ecosystem Heat** | Finnhub | Treemap: sized by market cap, coloured by today's move |
 | **Divergence Watch** | computed | Names that usually track SPCX but broke ranks today |
 | **Signal** | Finnhub | SpaceX + ecosystem news, tagged by what drives price |
@@ -104,10 +105,30 @@ A transparent weighted score (tune the weights in `src/pulse.js`):
 | Constellation growth | 0.25 | net satellites added since last sample |
 | Ecosystem breadth | 0.20 | share of connected names trading up |
 | Contract activity | 0.15 | new federal awards in 30 days |
+| Regulatory balance | 0.10 | 14-day approvals vs restrictions from the radar (neutral 0.5 when quiet) |
 
 Weights renormalise over whatever feeds report, so a missing source never breaks
 the score (it just relies on the rest). Bands: ≥70 nominal · 40–69 caution · <40 critical.
-A regulatory-events input is reserved for the next iteration.
+
+---
+
+## The regulatory radar
+
+Keyless by design. Targeted Google News RSS queries (in `src/regulatory.js`)
+cover FCC dockets and international licensing news; each headline is auto-tagged
+with a country (regulator names like ICASA/Anatel/TRAI are recognised) and a
+direction — ▲ approval-side, ▼ restriction-side. The 14-day ▲/▼ balance feeds
+the Pulse, and clear approvals/restrictions from the last 24h fire email alerts.
+
+The **market-access board** (`src/markets.js`) is seed data, honestly labelled
+with its as-of date on the dashboard. The stream informs it, but status changes
+are a judgement call — edit the file and redeploy. Add national-regulator RSS
+feeds to `SOURCES` any time; one dead feed never takes down the radar.
+
+Two honest caveats: Google News RSS is an unofficial-but-stable interface (if it
+ever changes shape, the radar degrades to empty rather than erroring), and
+keyword direction-tagging is heuristic — expect the occasional mislabelled ▲/▼;
+the headline text is always right there to judge for yourself.
 
 ---
 
@@ -125,6 +146,5 @@ A regulatory-events input is reserved for the next iteration.
   that flag is why it's there.
 
 ## Roadmap
-- FCC ECFS regulatory radar (filings) + international Starlink market-access tracker
 - Supply-chain geo-migration watch (Taiwan → Vietnam)
 - Optional AI "what changed since yesterday" briefing

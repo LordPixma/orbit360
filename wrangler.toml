@@ -12,13 +12,13 @@ binding = "ASSETS"
 # then paste the id below.
 [[kv_namespaces]]
 binding = "ORBIT_KV"
-id = "PASTE_YOUR_KV_ID_HERE"
+id = "d840bf219e6c4b1d95ed43ef4e8c03c3"
 
 # Native email alerts (free). Requires Email Routing enabled on the domain and
 # the destination address verified in the Cloudflare dashboard.
 [[send_email]]
 name = "SEND_EMAIL"
-destination_address = "you@yourdomain.com"
+destination_address = "samuel@mustardtreegroup.com"
 
 # Poll + alert every 10 minutes.
 [triggers]
@@ -27,8 +27,8 @@ crons = ["*/10 * * * *"]
 [vars]
 # ALERT_FROM must be on a domain you control on Cloudflare.
 # ALERT_TO must equal the verified destination address above.
-ALERT_FROM = "orbit360@yourdomain.com"
-ALERT_TO = "you@yourdomain.com"
+ALERT_FROM = "orbit360@mustardtreegroup.com"
+ALERT_TO = "samuel@mustardtreegroup.com"
 
 # NOTE: FINNHUB_API_KEY is a SECRET — never put it here. Set it with:
 #   wrangler secret put FINNHUB_API_KEY

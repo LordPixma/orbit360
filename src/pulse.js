@@ -10,7 +10,7 @@ const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
 // Each sub-signal returns 0..1. null means "no data yet" and is dropped from the
 // weighted average (weights renormalise over whatever we actually have).
-function subsignals({ launchOps, constellation, contracts, breadth }) {
+function subsignals({ launchOps, constellation, contracts, breadth, regulatory }) {
   const s = {};
 
   // Launch momentum: blend of cadence (target ~12 launches/30d at full tempo)
@@ -38,6 +38,17 @@ function subsignals({ launchOps, constellation, contracts, breadth }) {
   // bid says the whole complex is risk-on with SpaceX.
   if (breadth != null) {
     s.ecosystem = { value: clamp01(breadth), weight: 0.20 };
+  }
+
+  // Regulatory tailwind/headwind: net direction of regulatory events over the
+  // last 14 days (approvals vs restrictions). Sits at neutral (0.5) when
+  // nothing is moving, so a quiet fortnight neither lifts nor drags the score.
+  if (regulatory && regulatory.pos != null) {
+    const n = regulatory.pos + regulatory.neg;
+    s.regulatory = {
+      value: n ? clamp01(0.5 + 0.5 * (regulatory.pos - regulatory.neg) / n) : 0.5,
+      weight: 0.10,
+    };
   }
 
   return s;

@@ -1,9 +1,9 @@
 // Alerts — detects significant events and emails you via Cloudflare's native
 // send_email binding (free, to a verified destination address; no third party).
 // Dedupe state lives in KV so you only get pinged once per event.
+// Zero dependencies: the message is plain-text MIME, built by hand below.
 
 import { EmailMessage } from 'cloudflare:email';
-import { createMimeMessage } from 'mimetext';
 
 // Thresholds — tune to taste.
 const SPCX_MOVE = 5;      // % move in SPCX
@@ -51,8 +51,19 @@ export function detectEvents(snapshot, lastState) {
   const band = snapshot.pulse?.status;
   if (band && lastState?.pulseBand && band !== lastState.pulseBand) {
     events.push({ key: `pulse-${snapshot.day}-${band}`,
-      title: `Pulse → ${band.toUpperCase()}`,
+      title: `Pulse -> ${band.toUpperCase()}`,
       detail: `Operational health crossed into ${band} (${snapshot.pulse.score}/100).` });
+  }
+
+  // 6. High-impact regulatory event — a clear approval or restriction with a
+  // country attached. Only items from the last 24h qualify, so the first run
+  // after deploy doesn't flood the inbox with backlog.
+  for (const ev of (snapshot.regulatory?.events || []).slice(0, 10)) {
+    if (!ev.major || !ev.country) continue;
+    if (!ev.date || Date.now() - ev.date > 24 * 3600e3) continue;
+    events.push({ key: `reg-${ev.id}`,
+      title: `Regulatory (${ev.country}): ${ev.direction === 'positive' ? 'opening' : 'restriction'}`,
+      detail: ev.title });
   }
 
   return events;
@@ -80,17 +91,19 @@ export async function fireAlerts(env, snapshot) {
   return fresh;
 }
 
+// Headers are kept ASCII-only (email headers are fussy); the body is UTF-8.
 async function sendEmail(env, events) {
-  const msg = createMimeMessage();
-  msg.setSender({ name: 'Orbit360', addr: env.ALERT_FROM });
-  msg.setRecipient(env.ALERT_TO);
-  msg.setSubject(`Orbit360 · ${events[0].title}${events.length > 1 ? ` (+${events.length - 1} more)` : ''}`);
-
-  const lines = events.map(e => `• ${e.title}\n  ${e.detail}`).join('\n\n');
-  msg.addMessage({ contentType: 'text/plain', data:
-    `Significant activity in the SpaceX ecosystem:\n\n${lines}\n\n— Orbit360` });
-
-  await env.SEND_EMAIL.send(new EmailMessage(env.ALERT_FROM, env.ALERT_TO, msg.asRaw()));
+  const subject = `Orbit360: ${events[0].title}${events.length > 1 ? ` (+${events.length - 1} more)` : ''}`;
+  const lines = events.map(e => `* ${e.title}\r\n  ${e.detail}`).join('\r\n\r\n');
+  const raw =
+    `From: Orbit360 <${env.ALERT_FROM}>\r\n` +
+    `To: ${env.ALERT_TO}\r\n` +
+    `Subject: ${subject}\r\n` +
+    `MIME-Version: 1.0\r\n` +
+    `Content-Type: text/plain; charset=utf-8\r\n` +
+    `\r\n` +
+    `Significant activity in the SpaceX ecosystem:\r\n\r\n${lines}\r\n\r\n-- Orbit360`;
+  await env.SEND_EMAIL.send(new EmailMessage(env.ALERT_FROM, env.ALERT_TO, raw));
 }
 
 const fmtUsd = (n) => n == null ? 'n/a'

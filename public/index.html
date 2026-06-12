@@ -125,6 +125,25 @@
   .div-row .sym{font-weight:600; width:60px}
   .empty{font-family:var(--mono); font-size:11.5px; color:var(--muted-2); line-height:1.5}
   .spark{width:100%; height:34px; margin-top:8px}
+  /* regulatory radar */
+  .reg-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+  @media(max-width:920px){.reg-grid{grid-template-columns:1fr}}
+  .chips{display:flex; flex-wrap:wrap; gap:7px}
+  .chip{font-family:var(--mono); font-size:10.5px; padding:4px 9px; border-radius:5px; border:1px solid var(--grid); color:var(--ink); cursor:default}
+  .chip i{display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:1px}
+  .chip.live i{background:var(--nominal)} .chip.approved i{background:var(--live)}
+  .chip.pending i{background:var(--caution)} .chip.blocked i,.chip.banned i{background:var(--critical)}
+  .chip.banned{opacity:.6}
+  .reg-feed{max-height:260px; overflow:auto; padding-right:4px}
+  .reg-feed::-webkit-scrollbar{width:6px} .reg-feed::-webkit-scrollbar-thumb{background:var(--grid); border-radius:3px}
+  .reg-row{display:flex; gap:9px; padding:8px 0; border-bottom:1px solid var(--grid); align-items:baseline; text-decoration:none}
+  .reg-row:last-child{border-bottom:0}
+  .reg-row .dir{font-family:var(--mono); width:14px; flex:0 0 auto}
+  .reg-row .dir.positive{color:var(--nominal)} .reg-row .dir.negative{color:var(--critical)} .reg-row .dir.neutral{color:var(--muted-2)}
+  .reg-row .t{font-size:12.5px; color:var(--ink); line-height:1.35}
+  .reg-row:hover .t{color:var(--live)}
+  .reg-row .c{font-family:var(--mono); font-size:9.5px; color:var(--muted); border:1px solid var(--grid); border-radius:4px; padding:0 5px; flex:0 0 auto; margin-left:auto}
+
   .foot{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted-2); letter-spacing:.06em}
   @media(prefers-reduced-motion:reduce){ .dot{animation:none} }
 </style>
@@ -214,6 +233,22 @@
       <div id="divList"></div>
     </div>
 
+    <!-- regulatory radar -->
+    <div class="card col-12">
+      <h3><span class="g">◢</span> Regulatory radar — market access &amp; dockets <span class="pill" id="regPill">—</span></h3>
+      <div class="reg-grid">
+        <div>
+          <div class="lbl" style="margin-bottom:9px">MARKET ACCESS BOARD</div>
+          <div class="chips" id="regBoard"></div>
+          <div class="empty" style="margin-top:10px" id="regBoardNote"></div>
+        </div>
+        <div>
+          <div class="lbl" style="margin-bottom:9px">LIVE REGULATORY STREAM</div>
+          <div class="reg-feed" id="regFeed"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- news -->
     <div class="card col-12">
       <h3><span class="g">◢</span> Signal — SpaceX &amp; ecosystem news</h3>
@@ -256,6 +291,27 @@ const SAMPLE = {
     {agency:'NRO',amount:0,date:'2026-04-30',description:'Proliferated architecture launch support'}]},
   correlations:{RKLB:.74,ASTS:.66,RDW:.58,LUNR:.61,SATS:.43,NVDA:.39,BA:.12,LMT:-.05,NOC:.08,AVGO:.22,TMUS:.18},
   divergences:[{symbol:'ASTS',corr:.66,move:-3.2,expected:1}],
+  regulatory:{
+    counts:{pos:3,neg:1},
+    board:{asOf:'2026-06',markets:[
+      {country:'United States',status:'live',note:'Home market; FCC dockets are the main watch item.'},
+      {country:'United Kingdom',status:'live',note:'Ofcom-licensed.'},
+      {country:'European Union',status:'live',note:'Consumer service broadly live.'},
+      {country:'India',status:'approved',note:'GMPCS licence granted; rollout in progress.'},
+      {country:'Brazil',status:'live',note:'Anatel-licensed.'},
+      {country:'Vietnam',status:'approved',note:'Pilot approved 2025.'},
+      {country:'Pakistan',status:'pending',note:'Full PTA licence pending.'},
+      {country:'South Africa',status:'pending',note:'ICASA consultation ongoing.'},
+      {country:'Taiwan',status:'blocked',note:'Local-ownership rules.'},
+      {country:'Cameroon',status:'banned',note:'Service suspended.'},
+      {country:'Russia',status:'banned',note:'Prohibited.'},
+      {country:'China',status:'banned',note:'Building rival constellations.'}]},
+    events:[
+      {direction:'positive',country:'India',title:'DoT clears Starlink for nationwide commercial expansion',source:'Sample wire',date:Date.now()-2*36e5,link:'#'},
+      {direction:'positive',country:'United States',title:'FCC grants SpaceX modification for next-gen Starlink orbits',source:'Sample wire',date:Date.now()-7*36e5,link:'#'},
+      {direction:'negative',country:'Italy',title:'Parliament committee questions Starlink government contract terms',source:'Sample wire',date:Date.now()-21*36e5,link:'#'},
+      {direction:'positive',country:'South Africa',title:'ICASA opens consultation on equity-equivalence licensing route',source:'Sample wire',date:Date.now()-32*36e5,link:'#'},
+      {direction:'neutral',country:'European Union',title:'EU member states debate satellite spectrum coordination framework',source:'Sample wire',date:Date.now()-50*36e5,link:'#'}]},
   tickers:[]
 };
 
@@ -366,7 +422,7 @@ function render(d){
   const p=d.pulse||{};
   drawGauge(p.score,p.status||'unknown');
   const pill=$('pulsePill'); pill.textContent=(p.status||'—').toUpperCase(); pill.className='pill '+(p.status||'');
-  const compNames={launch:'Launch',constellation:'Sats',ecosystem:'Ecosystem',contracts:'Contracts'};
+  const compNames={launch:'Launch',constellation:'Sats',ecosystem:'Ecosystem',contracts:'Contracts',regulatory:'Regulatory'};
   $('pulseComps').innerHTML=Object.entries(p.components||{}).map(([k,c])=>
     `<div class="comp"><span class="nm">${compNames[k]||k}</span><span class="bar"><i style="width:${Math.round(c.value*100)}%"></i></span><span style="color:var(--muted);width:34px;text-align:right">${Math.round(c.value*100)}</span></div>`).join('')
     ||'<div class="empty">Pulse warms up as operational feeds report.</div>';
@@ -402,6 +458,26 @@ function render(d){
     `<div class="div-row"><span class="sym">${x.symbol}</span><span style="color:var(--muted)">ρ ${x.corr>=0?'+':''}${x.corr}</span><span class="${cls(x.move)}" style="margin-left:auto">${pct(x.move)}</span></div>`).join('')
     +`<div class="empty" style="margin-top:8px">Names that usually track SPCX but broke ranks today — worth a look.</div>`
     :'<div class="empty">No divergences. The complex is moving together (or history is still warming up — correlation needs ~5 sessions).</div>';
+
+  // regulatory radar
+  const rg=d.regulatory||{};
+  const board=(rg.board&&rg.board.markets)||[];
+  $('regBoard').innerHTML=board.length?board.map(m=>
+    `<span class="chip ${m.status}" title="${(m.note||'').replace(/"/g,'&quot;')}"><i></i>${m.country} · ${m.status.toUpperCase()}</span>`).join('')
+    :'<div class="empty">Board empty.</div>';
+  $('regBoardNote').textContent=rg.board?`Seed statuses as of ${rg.board.asOf} — hover a chip for context. Statuses are a judgement call: edit src/markets.js to update.`:'';
+  const pos=rg.counts?.pos??0, neg=rg.counts?.neg??0;
+  const rPill=$('regPill'); rPill.textContent=`▲${pos} ▼${neg} · 14D`;
+  rPill.className='pill '+(neg>pos?'caution':pos>0?'nominal':'');
+  const evs=rg.events||[];
+  $('regFeed').innerHTML=evs.length?evs.slice(0,14).map(e=>
+    `<a class="reg-row" href="${e.link||'#'}" target="_blank" rel="noopener">
+      <span class="dir ${e.direction||'neutral'}">${e.direction==='positive'?'▲':e.direction==='negative'?'▼':'●'}</span>
+      <span style="min-width:0"><span class="t">${e.title||''}</span><br>
+      <span class="src">${e.source||''}${e.date?' · '+timeAgo(e.date/1000):''}</span></span>
+      ${e.country?`<span class="c">${e.country}</span>`:''}
+    </a>`).join('')
+    :'<div class="empty">Stream quiet — live regulatory headlines populate from RSS once deployed.</div>';
 
   // news
   const feed=$('feed'); const news=d.news||[];

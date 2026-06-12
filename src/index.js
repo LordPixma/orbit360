@@ -8,6 +8,7 @@ import { getQuotes, getNews } from './finnhub.js';
 import { getGlobalQuotes } from './twelvedata.js';
 import { getConstellation, getLaunchOps } from './spacedata.js';
 import { getContracts } from './contracts.js';
+import { getRegulatory } from './regulatory.js';
 import { computePulse, pearson, findDivergences } from './pulse.js';
 import { fireAlerts } from './alerts.js';
 import { usTickers, globalTickers, ecosystem, TICKERS } from './tickers.js';
@@ -56,13 +57,14 @@ async function buildSnapshot(env) {
   const day = new Date().toISOString().slice(0, 10);
 
   // pull everything in parallel; each fetcher degrades gracefully on its own
-  const [usQuotes, globalQuotes, news, constellation, launchOps, contracts] = await Promise.all([
+  const [usQuotes, globalQuotes, news, constellation, launchOps, contracts, regulatory] = await Promise.all([
     getQuotes(usTickers(), env),
     getGlobalQuotes(globalTickers(), env),
     getNews(env),
     getConstellation(env),
     getLaunchOps(env),
     getContracts(env),
+    getRegulatory(env),
   ]);
 
   // merge feeds; any global name that didn't resolve keeps a pending placeholder
@@ -75,7 +77,7 @@ async function buildSnapshot(env) {
   const eco = ecosystem().map(t => quotes[t.symbol]).filter(d => d?.ok && d.changePct != null);
   const breadth = eco.length ? eco.filter(d => d.changePct > 0).length / eco.length : null;
 
-  const pulse = computePulse({ launchOps, constellation, contracts, breadth });
+  const pulse = computePulse({ launchOps, constellation, contracts, breadth, regulatory: regulatory.counts });
 
   // correlation + divergence from accumulated history
   const { correlations, divergences } = await analyseSeries(env, quotes);
@@ -93,6 +95,7 @@ async function buildSnapshot(env) {
     constellation,
     launchOps,
     contracts,
+    regulatory,
     pulse,
     pulseHistory,
     correlations,

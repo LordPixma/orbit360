@@ -2,17 +2,11 @@
   "name": "orbit360",
   "version": "1.0.0",
   "private": true,
-  "description": "A single-pane flight-ops console for SpaceX and its public-market ecosystem.",
+  "description": "A single-pane flight-ops console for SpaceX and its public-market ecosystem. Zero npm dependencies — deploys with global wrangler.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail"
-  },
-  "dependencies": {
-    "mimetext": "^3.0.27"
-  },
-  "devDependencies": {
-    "wrangler": "^3.90.0"
   }
 }
