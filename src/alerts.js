@@ -66,6 +66,16 @@ export function detectEvents(snapshot, lastState) {
       detail: ev.title });
   }
 
+  // 7. Supply-chain migration — a fresh relocation or risk headline (last 24h).
+  for (const ev of (snapshot.supplyChain?.events || []).slice(0, 8)) {
+    if (!ev.major) continue;
+    if (!ev.date || Date.now() - ev.date > 24 * 3600e3) continue;
+    const route = ev.from && ev.to ? ` ${ev.from}→${ev.to}` : ev.to ? ` →${ev.to}` : '';
+    events.push({ key: `sc-${ev.id}`,
+      title: `Supply chain: ${ev.kind === 'risk' ? 'risk flag' : 'relocation'}${route}`,
+      detail: ev.title });
+  }
+
   return events;
 }
 

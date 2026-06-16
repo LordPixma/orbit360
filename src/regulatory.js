@@ -10,6 +10,7 @@
 // Add national-regulator RSS feeds to SOURCES any time — same shape.
 
 import { MARKET_BOARD, COUNTRY_PATTERNS } from './markets.js';
+import { parseRss, hash } from './rss.js';
 
 const SOURCES = [
   {
@@ -100,38 +101,4 @@ function detectDirection(text) {
 function detectCountry(text) {
   for (const [re, name] of COUNTRY_PATTERNS) if (re.test(text)) return name;
   return null;
-}
-
-// --- minimal RSS parsing (Workers have no DOMParser) -------------------------
-
-function parseRss(xml) {
-  const items = [];
-  const itemRe = /<item>([\s\S]*?)<\/item>/g;
-  let m;
-  while ((m = itemRe.exec(xml))) {
-    const block = m[1];
-    const pick = (tag) => {
-      const r = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`).exec(block);
-      return r ? decode(r[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim()) : null;
-    };
-    items.push({
-      title: pick('title'),
-      link: pick('link'),
-      pubDate: pick('pubDate'),
-      description: pick('description'),
-      sourceName: pick('source'),
-    });
-  }
-  return items;
-}
-
-const decode = (s) => s
-  .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  .replace(/&#39;/g, "'").replace(/&apos;/g, "'").replace(/&quot;/g, '"')
-  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
-
-function hash(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return (h >>> 0).toString(36);
 }

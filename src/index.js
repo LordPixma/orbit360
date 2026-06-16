@@ -9,7 +9,9 @@ import { getGlobalQuotes } from './twelvedata.js';
 import { getConstellation, getLaunchOps } from './spacedata.js';
 import { getContracts } from './contracts.js';
 import { getRegulatory } from './regulatory.js';
+import { getSupplyChain } from './supplychain.js';
 import { computePulse, pearson, findDivergences } from './pulse.js';
+import { buildBriefing, rollDigest, generateNarrative } from './briefing.js';
 import { fireAlerts } from './alerts.js';
 import { usTickers, globalTickers, ecosystem, TICKERS } from './tickers.js';
 
@@ -37,6 +39,7 @@ export default {
       const snap = await buildSnapshot(env);
       await env.ORBIT_KV.put(SNAPSHOT_KEY, JSON.stringify(snap));
       await updateSeries(env, snap);
+      await generateNarrative(env, snap); // optional AI briefing (no-op without [ai] binding)
       await fireAlerts(env, snap);
     })());
   },
@@ -57,7 +60,7 @@ async function buildSnapshot(env) {
   const day = new Date().toISOString().slice(0, 10);
 
   // pull everything in parallel; each fetcher degrades gracefully on its own
-  const [usQuotes, globalQuotes, news, constellation, launchOps, contracts, regulatory] = await Promise.all([
+  const [usQuotes, globalQuotes, news, constellation, launchOps, contracts, regulatory, supplyChain] = await Promise.all([
     getQuotes(usTickers(), env),
     getGlobalQuotes(globalTickers(), env),
     getNews(env),
@@ -65,6 +68,7 @@ async function buildSnapshot(env) {
     getLaunchOps(env),
     getContracts(env),
     getRegulatory(env),
+    getSupplyChain(env),
   ]);
 
   // merge feeds; any global name that didn't resolve keeps a pending placeholder
@@ -85,7 +89,7 @@ async function buildSnapshot(env) {
   // pulse history (for the pulse-vs-price chart)
   const pulseHistory = (await env.ORBIT_KV.get('pulse:history', 'json')) || [];
 
-  return {
+  const snap = {
     day,
     builtAt: Date.now(),
     tickers: TICKERS,
@@ -96,11 +100,16 @@ async function buildSnapshot(env) {
     launchOps,
     contracts,
     regulatory,
+    supplyChain,
     pulse,
     pulseHistory,
     correlations,
     divergences,
   };
+
+  // "what changed since yesterday" — diff against the stored daily digests
+  snap.briefing = await buildBriefing(env, snap);
+  return snap;
 }
 
 // Accumulate daily closes per symbol + daily pulse, so correlation and the
@@ -127,6 +136,9 @@ async function updateSeries(env, snap) {
     while (ph.length > 120) ph.shift();
     await env.ORBIT_KV.put('pulse:history', JSON.stringify(ph));
   }
+
+  // daily metric digest powering the "since yesterday" briefing
+  await rollDigest(env, snap);
 }
 
 async function analyseSeries(env, quotes) {
