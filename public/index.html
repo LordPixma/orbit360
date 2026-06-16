@@ -52,6 +52,31 @@
     background:rgba(210,153,34,.08); color:var(--caution); border-radius:7px;
     padding:8px 13px; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em}
 
+  /* ---- header sync controls ---- */
+  .controls{display:flex; align-items:center; gap:8px}
+  .countdown{font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.04em; min-width:78px; text-align:right; user-select:none}
+  .countdown b{color:var(--ink); font-weight:600}
+  .btn{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); background:transparent; border:1px solid var(--grid); border-radius:6px;
+    padding:5px 9px; cursor:pointer; transition:.15s; white-space:nowrap}
+  .btn:hover{color:var(--ink); border-color:var(--live)}
+  .btn.on{color:var(--live); border-color:rgba(57,208,216,.5)}
+  .stale-badge{display:none; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em;
+    color:var(--caution); border:1px solid rgba(210,153,34,.45); background:rgba(210,153,34,.08);
+    border-radius:4px; padding:2px 6px; text-transform:uppercase}
+
+  /* ---- telemetry status bar ---- */
+  .telemetry{display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:10px;
+    border:1px solid var(--grid); border-radius:8px; padding:9px 13px;
+    background:linear-gradient(180deg,rgba(18,24,33,.7),rgba(15,21,29,.7))}
+  .telemetry .tl-lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted-2); margin-right:4px}
+  .subsys{display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px;
+    letter-spacing:.06em; color:var(--muted); padding:3px 9px; border-radius:20px; border:1px solid var(--grid); cursor:default}
+  .subsys i{width:7px; height:7px; border-radius:50%; flex:0 0 auto; background:var(--muted-2)}
+  .subsys.nominal i{background:var(--nominal); box-shadow:0 0 6px rgba(63,185,80,.5)}
+  .subsys.degraded i{background:var(--caution)}
+  .subsys.offline i{background:var(--critical)}
+
   /* ---- grid ---- */
   .grid{display:grid; gap:12px; margin-top:12px;
     grid-template-columns:repeat(12,1fr);}
@@ -93,9 +118,17 @@
   .comp .bar i{display:block; height:100%; background:var(--ion)}
   .comp .nm{color:var(--muted); width:78px; flex:0 0 auto}
 
+  /* launch T-minus */
+  .tminus{font-family:var(--mono); font-weight:600; font-size:19px; letter-spacing:.02em; margin-top:3px; font-variant-numeric:tabular-nums}
+  .tminus.go{color:var(--live)} .tminus.hold{color:var(--muted-2)}
+  .tm-lbl{font-family:var(--mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+
+  /* mini spark (market) */
+  .mini-spark{width:100%; height:30px; margin-top:10px}
+
   /* treemap */
   .tm{width:100%; height:230px}
-  .tm rect{stroke:var(--space); stroke-width:1.5; rx:3}
+  .tm rect{stroke:var(--space); stroke-width:1.5; rx:3; cursor:pointer}
   .tm text{font-family:var(--mono); pointer-events:none}
   .tm .sym{font-weight:600; font-size:12px}
   .tm .pct{font-size:10px; opacity:.85}
@@ -103,7 +136,39 @@
   .legend span{font-family:var(--mono); font-size:10px; color:var(--muted); display:flex; align-items:center; gap:5px}
   .legend i{width:9px; height:9px; border-radius:2px; display:inline-block}
 
+  /* view toggle */
+  .toggle{display:inline-flex; margin-left:auto; border:1px solid var(--grid); border-radius:6px; overflow:hidden}
+  .toggle button{font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); background:transparent; border:0; padding:4px 10px; cursor:pointer}
+  .toggle button.on{color:var(--space); background:var(--live); font-weight:600}
+
+  /* ecosystem table */
+  .eco-table{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11.5px}
+  .eco-table th{text-align:left; color:var(--muted); font-weight:500; font-size:9.5px; letter-spacing:.1em;
+    text-transform:uppercase; padding:6px 8px; border-bottom:1px solid var(--grid); cursor:pointer; white-space:nowrap; position:sticky; top:0; background:var(--panel)}
+  .eco-table th.sorted{color:var(--live)}
+  .eco-table th.num, .eco-table td.num{text-align:right}
+  .eco-table td{padding:6px 8px; border-bottom:1px solid #161e28; color:var(--ink)}
+  .eco-table tr:last-child td{border-bottom:0}
+  .eco-table tbody tr:hover td{background:rgba(57,208,216,.04)}
+  .eco-table .nm{color:var(--ink); font-weight:600}
+  .eco-table .co{color:var(--muted-2); font-size:10px; margin-top:1px}
+  .ttag{font-size:8.5px; letter-spacing:.05em; padding:1px 5px; border-radius:4px; border:1px solid var(--grid); color:var(--muted); margin-left:6px; vertical-align:1px}
+  .ttag.subject{color:var(--live); border-color:rgba(57,208,216,.4)}
+  .ttag.direct{color:var(--nominal); border-color:rgba(63,185,80,.4)}
+  .ttag.partner{color:var(--ion); border-color:rgba(47,129,247,.4)}
+  .ttag.pureplay{color:#b389f9; border-color:rgba(179,137,249,.4)}
+  .ttag.legacy{color:var(--muted)}
+  .ttag.ai{color:var(--caution); border-color:rgba(210,153,34,.4)}
+
   /* news */
+  .filters{display:flex; gap:7px; flex-wrap:wrap; margin:-2px 0 10px}
+  .fchip{font-family:var(--mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); background:transparent; border:1px solid var(--grid); border-radius:20px;
+    padding:3px 10px; cursor:pointer; transition:.15s}
+  .fchip:hover{color:var(--ink)}
+  .fchip.on{color:var(--space); background:var(--ink); border-color:var(--ink); font-weight:600}
+  .fchip .n{opacity:.55; margin-left:4px}
   .feed{max-height:300px; overflow:auto; margin:-4px -4px 0; padding:0 4px}
   .feed::-webkit-scrollbar{width:6px} .feed::-webkit-scrollbar-thumb{background:var(--grid); border-radius:3px}
   .news{display:block; padding:10px 0; border-bottom:1px solid var(--grid); text-decoration:none}
@@ -144,7 +209,7 @@
   .reg-row:hover .t{color:var(--live)}
   .reg-row .c{font-family:var(--mono); font-size:9.5px; color:var(--muted); border:1px solid var(--grid); border-radius:4px; padding:0 5px; flex:0 0 auto; margin-left:auto}
 
-  .foot{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted-2); letter-spacing:.06em}
+  .foot{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted-2); letter-spacing:.06em; line-height:1.7}
   @media(prefers-reduced-motion:reduce){ .dot{animation:none} }
 </style>
 </head>
@@ -156,11 +221,18 @@
     <div class="price" id="hdrPrice">—</div>
     <div class="chg" id="hdrChg">—</div>
     <div class="sync">
+      <span class="stale-badge" id="staleBadge">Stale</span>
       <span class="dot" id="liveDot"></span>
       <span class="lbl" id="syncLbl">SYNC —</span>
+      <div class="controls">
+        <span class="countdown" id="countdown" title="Time to next auto-sync">NEXT —</span>
+        <button class="btn" id="refreshBtn" title="Refresh now (R)">↻ Sync</button>
+        <button class="btn on" id="pauseBtn" title="Pause / resume auto-sync (P)">⏸ Auto</button>
+      </div>
     </div>
   </div>
   <div class="preview" id="previewBanner">PREVIEW MODE — sample telemetry. Deploy behind the Worker with your Finnhub key for live data.</div>
+  <div class="telemetry" id="telemetry" aria-label="Subsystem telemetry status"></div>
 
   <div class="grid">
     <!-- HERO: market -->
@@ -174,6 +246,8 @@
         <div class="kv"><span class="k">PREV CLOSE</span><span class="v" id="mPrev">—</span></div>
         <div class="kv"><span class="k">MARKET CAP</span><span class="v" id="mCap">—</span></div>
       </div>
+      <svg class="mini-spark" id="mSpark" viewBox="0 0 280 30" preserveAspectRatio="none"></svg>
+      <div class="tm-lbl" style="margin-top:1px">SPCX TREND · BUILDS OVER TIME</div>
     </div>
 
     <!-- SIGNATURE: pulse -->
@@ -195,7 +269,11 @@
       <div style="margin-top:12px">
         <div class="kv"><span class="k">SUCCESS RATE</span><span class="v" id="lRate">—</span></div>
         <div class="kv"><span class="k">DAYS SINCE LAST</span><span class="v" id="lDays">—</span></div>
-        <div class="kv"><span class="k">NEXT</span><span class="v" id="lNext" style="max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">—</span></div>
+        <div class="kv"><span class="k">LAST</span><span class="v" id="lLast" style="max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">—</span></div>
+      </div>
+      <div style="margin-top:11px; padding-top:10px; border-top:1px solid var(--grid)">
+        <div class="tm-lbl" id="lNext">NEXT —</div>
+        <div class="tminus hold" id="lCountdown">T- —</div>
       </div>
     </div>
 
@@ -214,17 +292,25 @@
       <div id="ctList"></div>
     </div>
 
-    <!-- treemap heat -->
+    <!-- treemap heat / table -->
     <div class="card col-8">
-      <h3><span class="g">◢</span> Ecosystem heat — sized by market cap, coloured by today's move</h3>
-      <svg class="tm" id="treemap" preserveAspectRatio="none"></svg>
-      <div class="legend">
-        <span><i style="background:var(--critical)"></i> −3%+</span>
-        <span><i style="background:#7a3b3f"></i> down</span>
-        <span><i style="background:#2b3440"></i> flat</span>
-        <span><i style="background:#2f5d43"></i> up</span>
-        <span><i style="background:var(--nominal)"></i> +3%+</span>
+      <h3><span class="g">◢</span> Ecosystem heat — sized by cap, coloured by today's move
+        <span class="toggle" id="ecoToggle">
+          <button type="button" data-view="heat" class="on">Heat</button>
+          <button type="button" data-view="table">Table</button>
+        </span>
+      </h3>
+      <div id="heatView">
+        <svg class="tm" id="treemap" preserveAspectRatio="none"></svg>
+        <div class="legend">
+          <span><i style="background:var(--critical)"></i> −3%+</span>
+          <span><i style="background:#7a3b3f"></i> down</span>
+          <span><i style="background:#2b3440"></i> flat</span>
+          <span><i style="background:#2f5d43"></i> up</span>
+          <span><i style="background:var(--nominal)"></i> +3%+</span>
+        </div>
       </div>
+      <div id="tableView" style="display:none; max-height:268px; overflow:auto"></div>
     </div>
 
     <!-- correlation / divergence -->
@@ -252,19 +338,24 @@
     <!-- news -->
     <div class="card col-12">
       <h3><span class="g">◢</span> Signal — SpaceX &amp; ecosystem news</h3>
+      <div class="filters" id="newsFilters"></div>
       <div class="feed" id="feed"></div>
     </div>
   </div>
 
-  <div class="foot" id="foot">ORBIT//360 · monitor the rocket, not just the ticker</div>
+  <div class="foot" id="foot">ORBIT//360 · monitor the rocket, not just the ticker<br>
+    <span style="color:var(--muted-2)">DATA · Finnhub · Launch Library 2 · CelesTrak · USASpending · Google News RSS</span></div>
 
 <script>
 // ---------------------------------------------------------------------------
-// Sample telemetry — used when the /api backend isn't reachable (e.g. preview).
-// Numbers reflect SPCX's IPO-day debut for a representative look.
+// Orbit360 dashboard client. Renders the /api/dashboard aggregate, with a
+// sample-telemetry fallback for preview/offline. Everything degrades softly:
+// a missing feed shows a placeholder, not an error.
 // ---------------------------------------------------------------------------
+const NOW_MS = Date.now(), NOW_S = Math.floor(NOW_MS / 1000);
+
 const SAMPLE = {
-  builtAt: Date.now(), preview:true,
+  builtAt: NOW_MS, preview:true,
   quotes:{
     SPCX:{ok:true,price:172.40,change:37.40,changePct:27.7,open:150.0,high:176.5,low:149.2,prevClose:135.0,marketCap:2030000},
     SATS:{ok:true,changePct:6.1,marketCap:11200}, STM:{ok:true,changePct:2.3,marketCap:24800},
@@ -280,17 +371,30 @@ const SAMPLE = {
   },
   pulse:{score:76,status:'nominal',components:{
     launch:{value:.88,weight:.30}, constellation:{value:.72,weight:.25},
-    ecosystem:{value:.69,weight:.20}, contracts:{value:.50,weight:.15}}},
+    ecosystem:{value:.69,weight:.20}, contracts:{value:.50,weight:.15}, regulatory:{value:.66,weight:.10}}},
   pulseHistory:[{score:61,spcx:135},{score:64,spcx:150},{score:69,spcx:158},{score:72,spcx:163},{score:74,spcx:168},{score:76,spcx:172.4}],
   launchOps:{ytd:91,successRate:99,daysSinceLast:2,
-    nextLaunch:{name:'Starlink Group 11-7',net:'2026-06-14T08:40:00Z'}},
+    lastLaunch:{name:'Starlink Group 12-5',net:new Date(NOW_MS-2*864e5).toISOString(),status:'Launch Successful'},
+    nextLaunch:{name:'Starlink Group 11-7',net:new Date(NOW_MS+26*36e5+14*6e4).toISOString(),pad:'LC-39A, Kennedy'}},
   constellation:{count:8912,delta:54,history:[8740,8772,8772,8801,8845,8858,8858,8902,8912]},
   contracts:{last30:2,awards:[
-    {agency:'Space Force',amount:733000000,date:'2026-05-28',description:'NSSL Phase 3 launch services task order'},
-    {agency:'NASA',amount:264000000,date:'2026-05-12',description:'Crew rotation services extension'},
-    {agency:'NRO',amount:0,date:'2026-04-30',description:'Proliferated architecture launch support'}]},
+    {id:'s1',agency:'Space Force',amount:733000000,date:'2026-05-28',description:'NSSL Phase 3 launch services task order'},
+    {id:'s2',agency:'NASA',amount:264000000,date:'2026-05-12',description:'Crew rotation services extension'},
+    {id:'s3',agency:'NRO',amount:0,date:'2026-04-30',description:'Proliferated architecture launch support'}]},
   correlations:{RKLB:.74,ASTS:.66,RDW:.58,LUNR:.61,SATS:.43,NVDA:.39,BA:.12,LMT:-.05,NOC:.08,AVGO:.22,TMUS:.18},
   divergences:[{symbol:'ASTS',corr:.66,move:-3.2,expected:1}],
+  news:[
+    {headline:'Falcon 9 lofts 23 Starlink satellites from Cape Canaveral',source:'Spaceflight Now',category:'launch',datetime:NOW_S-1*3600,url:'#'},
+    {headline:'Space Force awards SpaceX $733M NSSL Phase 3 task order',source:'Reuters',category:'contract',datetime:NOW_S-3*3600,url:'#'},
+    {headline:'Starlink direct-to-cell crosses 5M activated devices',source:'Bloomberg',category:'starlink',datetime:NOW_S-5*3600,url:'#'},
+    {headline:'xAI expands Memphis compute cluster with fresh NVIDIA GPUs',source:'The Information',category:'ai',datetime:NOW_S-8*3600,url:'#'},
+    {headline:'FCC clears next-gen Starlink orbital-shell modification',source:'SpaceNews',category:'regulatory',datetime:NOW_S-11*3600,url:'#'},
+    {headline:'SpaceX secondary prices shares at $172, implying ~$2.0T cap',source:'WSJ',category:'market',datetime:NOW_S-14*3600,url:'#'},
+    {headline:'Starship Flight 12 stacks ahead of static-fire campaign',source:'NASASpaceflight',category:'launch',datetime:NOW_S-20*3600,url:'#'},
+    {headline:'India DoT clears Starlink for nationwide commercial service',source:'Economic Times',category:'regulatory',datetime:NOW_S-26*3600,url:'#'},
+    {headline:'Rocket Lab Neutron slips as SpaceX cadence pressures rivals',source:'Payload',category:'market',datetime:NOW_S-30*3600,url:'#'},
+    {headline:'NASA extends Crew Dragon rotation services contract',source:'Ars Technica',category:'contract',datetime:NOW_S-40*3600,url:'#'}
+  ],
   regulatory:{
     counts:{pos:3,neg:1},
     board:{asOf:'2026-06',markets:[
@@ -307,19 +411,52 @@ const SAMPLE = {
       {country:'Russia',status:'banned',note:'Prohibited.'},
       {country:'China',status:'banned',note:'Building rival constellations.'}]},
     events:[
-      {direction:'positive',country:'India',title:'DoT clears Starlink for nationwide commercial expansion',source:'Sample wire',date:Date.now()-2*36e5,link:'#'},
-      {direction:'positive',country:'United States',title:'FCC grants SpaceX modification for next-gen Starlink orbits',source:'Sample wire',date:Date.now()-7*36e5,link:'#'},
-      {direction:'negative',country:'Italy',title:'Parliament committee questions Starlink government contract terms',source:'Sample wire',date:Date.now()-21*36e5,link:'#'},
-      {direction:'positive',country:'South Africa',title:'ICASA opens consultation on equity-equivalence licensing route',source:'Sample wire',date:Date.now()-32*36e5,link:'#'},
-      {direction:'neutral',country:'European Union',title:'EU member states debate satellite spectrum coordination framework',source:'Sample wire',date:Date.now()-50*36e5,link:'#'}]},
-  tickers:[]
+      {direction:'positive',country:'India',title:'DoT clears Starlink for nationwide commercial expansion',source:'Sample wire',date:NOW_MS-2*36e5,link:'#'},
+      {direction:'positive',country:'United States',title:'FCC grants SpaceX modification for next-gen Starlink orbits',source:'Sample wire',date:NOW_MS-7*36e5,link:'#'},
+      {direction:'negative',country:'Italy',title:'Parliament committee questions Starlink government contract terms',source:'Sample wire',date:NOW_MS-21*36e5,link:'#'},
+      {direction:'positive',country:'South Africa',title:'ICASA opens consultation on equity-equivalence licensing route',source:'Sample wire',date:NOW_MS-32*36e5,link:'#'},
+      {direction:'neutral',country:'European Union',title:'EU member states debate satellite spectrum coordination framework',source:'Sample wire',date:NOW_MS-50*36e5,link:'#'}]},
+  tickers:[
+    {symbol:'SPCX',name:'SpaceX',tier:'subject',region:'US',linkage:'The subject. Space + AI after the xAI merger.'},
+    {symbol:'SATS',name:'EchoStar',tier:'direct',region:'US',linkage:'Sold spectrum to SpaceX partly for equity; holds ~$11B of SpaceX stock.'},
+    {symbol:'STM',name:'STMicroelectronics',tier:'direct',region:'EU',linkage:'Co-designer of Starlink terminal chips.'},
+    {symbol:'AVGO',name:'Broadcom',tier:'direct',region:'US',linkage:'Communications components for Starlink hardware.'},
+    {symbol:'FTC.L',name:'Filtronic',tier:'direct',region:'UK',linkage:'RF/GaN amplifiers; multi-year SpaceX partnership.'},
+    {symbol:'347700.KS',name:'Sphere Corp',tier:'direct',region:'KR',linkage:'Superalloys for Starship; ~$1.05B supply deal.'},
+    {symbol:'6285.TW',name:'Wistron NeWeb',tier:'direct',region:'TW',linkage:'Primary maker of Starlink user terminals.'},
+    {symbol:'MDA.TO',name:'MDA Space',tier:'direct',region:'CA',linkage:'Satellite systems & robotics supply.'},
+    {symbol:'TMUS',name:'T-Mobile US',tier:'partner',region:'US',linkage:'Starlink direct-to-cell partner.'},
+    {symbol:'RKLB',name:'Rocket Lab',tier:'pureplay',region:'US',linkage:'The public alternative to SpaceX: launch + space systems.'},
+    {symbol:'ASTS',name:'AST SpaceMobile',tier:'pureplay',region:'US',linkage:'Direct-to-cell rival (BlueBird constellation).'},
+    {symbol:'RDW',name:'Redwire',tier:'pureplay',region:'US',linkage:'In-space manufacturing & infrastructure.'},
+    {symbol:'LUNR',name:'Intuitive Machines',tier:'pureplay',region:'US',linkage:'Lunar landers & cislunar services.'},
+    {symbol:'ETL.PA',name:'Eutelsat',tier:'pureplay',region:'EU',linkage:'Owns OneWeb — Europe’s sovereign alternative to Starlink.'},
+    {symbol:'AVIO.MI',name:'Avio',tier:'pureplay',region:'EU',linkage:'European launch (Vega).'},
+    {symbol:'BA',name:'Boeing',tier:'legacy',region:'US',linkage:'ULA joint-venture partner; launch competitor.'},
+    {symbol:'LMT',name:'Lockheed Martin',tier:'legacy',region:'US',linkage:'ULA joint-venture partner; defence/space.'},
+    {symbol:'NOC',name:'Northrop Grumman',tier:'legacy',region:'US',linkage:'Satellites & space vehicles.'},
+    {symbol:'AIR.PA',name:'Airbus',tier:'legacy',region:'EU',linkage:'Satellite manufacturing; European prime.'},
+    {symbol:'NVDA',name:'NVIDIA',tier:'ai',region:'US',linkage:'GPU supply underpinning the xAI compute build-out.'}
+  ]
 };
 
-const TIERS={subject:'SUBJECT',direct:'DIRECT',partner:'PARTNER',pureplay:'PURE-PLAY',legacy:'LEGACY',ai:'AI INFRA'};
 const NAMES={SPCX:'SpaceX',SATS:'EchoStar',STM:'STMicro',AVGO:'Broadcom',TMUS:'T-Mobile',RKLB:'Rocket Lab',ASTS:'AST SpaceMobile',RDW:'Redwire',LUNR:'Intuitive Mach.',BA:'Boeing',LMT:'Lockheed',NOC:'Northrop',NVDA:'NVIDIA'};
+
+// ---- client state ---------------------------------------------------------
+const POLL_MS = 60000;
+let LAST = null;          // last snapshot rendered (live or sample)
+let LIVE = false;         // have we ever received live data?
+let STALE = false;        // showing last-good live data after a failed refresh?
+let PAUSED = false;       // auto-sync paused?
+let pollTimer = null;
+let nextSyncAt = NOW_MS + POLL_MS;
+let ecoView = localStorage.getItem('orbit360.ecoView') || 'heat';
+let newsFilter = localStorage.getItem('orbit360.newsFilter') || 'all';
+let sortKey = 'cap', sortDir = -1; // ecosystem table sort
 
 // ---- helpers --------------------------------------------------------------
 const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const fmt=(n,d=2)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
 const usd=n=>n==null?'—':(n>=1e9?'$'+(n/1e9).toFixed(1)+'B':n>=1e6?'$'+(n/1e6).toFixed(1)+'M':'$'+Number(n).toFixed(2));
 const capUsd=m=>m==null?'—':(m>=1e6?'$'+(m/1e6).toFixed(2)+'T':m>=1e3?'$'+(m/1e3).toFixed(1)+'B':'$'+m.toFixed(0)+'M'); // Finnhub cap is in $M
@@ -335,6 +472,15 @@ function heat(p){
   const t=-x;return mix([43,52,64],[248,81,73],t);
 }
 const mix=(a,b,t)=>`rgb(${a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')})`;
+
+// T-minus / T-plus formatting from a millisecond delta (positive = future)
+function fmtTminus(ms){
+  if(ms==null||isNaN(ms)) return null;
+  const past=ms<0; ms=Math.abs(ms);
+  const d=Math.floor(ms/864e5), h=Math.floor(ms/36e5)%24, m=Math.floor(ms/6e4)%60, s=Math.floor(ms/1e3)%60;
+  const p2=n=>String(n).padStart(2,'0');
+  return (past?'T+ ':'T- ')+(d>0?d+'d ':'')+p2(h)+':'+p2(m)+':'+p2(s);
+}
 
 // ---- gauge ----------------------------------------------------------------
 function polar(cx,cy,r,deg){const a=(deg-90)*Math.PI/180;return[cx+r*Math.cos(a),cy+r*Math.sin(a)];}
@@ -388,7 +534,7 @@ function treemap(items,W,H){
   }
   return out;
 }
-function drawTreemap(quotes){
+function drawTreemap(quotes,M){
   const el=$('treemap'); const W=el.clientWidth||760, H=230; el.setAttribute('viewBox',`0 0 ${W} ${H}`);
   const items=Object.entries(quotes).filter(([s,d])=>d&&d.ok&&d.marketCap>0)
     .map(([sym,d])=>({sym,val:d.marketCap,pct:d.changePct}));
@@ -397,12 +543,91 @@ function drawTreemap(quotes){
   const rects=treemap(items,W,H);
   el.innerHTML=rects.map(r=>{
     const big=r.w>56&&r.h>30; const fs=r.w>90?12:11;
-    return `<g>
+    const t=M[r.sym]||{}; const nm=t.name||NAMES[r.sym]||r.sym;
+    const tip=`${nm} (${r.sym})\n${(t.tier||'').toUpperCase()} · cap ${capUsd(quotes[r.sym]&&quotes[r.sym].marketCap)} · ${pct(r.pct)}${t.linkage?'\n'+t.linkage:''}`;
+    return `<g><title>${esc(tip)}</title>
       <rect x="${r.x}" y="${r.y}" width="${Math.max(0,r.w-1.5)}" height="${Math.max(0,r.h-1.5)}" fill="${heat(r.pct)}"></rect>
       ${big?`<text class="sym" x="${r.x+7}" y="${r.y+18}" fill="#fff" style="font-size:${fs}px">${r.sym.split('.')[0]}</text>
             <text class="pct" x="${r.x+7}" y="${r.y+33}" fill="rgba(255,255,255,.85)">${pct(r.pct)}</text>`:''}
     </g>`;
   }).join('');
+}
+
+// ---- ecosystem table ------------------------------------------------------
+function metaMap(d){ const m={}; (d.tickers||[]).forEach(t=>m[t.symbol]=t); return m; }
+function renderTable(d){
+  const q=d.quotes||{}, M=metaMap(d), corr=d.correlations||{};
+  let rows=Object.keys(q).map(sym=>{
+    const t=M[sym]||{}, dq=q[sym]||{};
+    return { sym, name:t.name||NAMES[sym]||sym, tier:t.tier||'', region:t.region||'',
+      price:dq.price, chg:dq.changePct, cap:(dq.marketCap!=null?dq.marketCap:t.approxCapUSD)??null,
+      corr:corr[sym]!=null?corr[sym]:null, linkage:t.linkage||'' };
+  });
+  const key={cap:r=>r.cap??-1, chg:r=>r.chg??-1e9, corr:r=>r.corr??-2, sym:r=>r.sym};
+  rows.sort((a,b)=> sortKey==='sym'
+    ? sortDir*String(key.sym(a)).localeCompare(String(key.sym(b)))
+    : sortDir*(key[sortKey](a)-key[sortKey](b)));
+  const arrow=k=> sortKey===k?(sortDir<0?' ▼':' ▲'):'';
+  const th=(k,lbl,num)=>`<th data-key="${k}" class="${num?'num ':''}${sortKey===k?'sorted':''}">${lbl}${arrow(k)}</th>`;
+  $('tableView').innerHTML=`<table class="eco-table">
+    <thead><tr>${th('sym','Symbol')}${th('cap','Cap',1)}${th('chg','Chg%',1)}${th('corr','ρ SPCX',1)}</tr></thead>
+    <tbody>${rows.map(r=>`<tr title="${esc(r.linkage)}">
+      <td><span class="nm">${r.sym.split('.')[0]}</span><span class="ttag ${r.tier}">${(r.tier||'—').toUpperCase()}</span>
+        <div class="co">${esc(r.name)}${r.region?' · '+r.region:''}${r.price!=null?' · '+(r.region==='US'?'$':'')+fmt(r.price):''}</div></td>
+      <td class="num">${capUsd(r.cap)}</td>
+      <td class="num ${cls(r.chg)}">${pct(r.chg)}</td>
+      <td class="num">${r.corr!=null?(r.corr>=0?'+':'')+r.corr.toFixed(2):'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function renderEco(d){
+  const isHeat=ecoView==='heat';
+  $('heatView').style.display=isHeat?'':'none';
+  $('tableView').style.display=isHeat?'none':'';
+  [...$('ecoToggle').children].forEach(b=>b.classList.toggle('on',b.dataset.view===ecoView));
+  if(isHeat) drawTreemap(d.quotes||{},metaMap(d)); else renderTable(d);
+}
+
+// ---- subsystem telemetry --------------------------------------------------
+function renderTelemetry(d){
+  const q=d.quotes||{}, items=[];
+  const add=(name,state,detail)=>items.push({name,state,detail});
+  add('MARKET', q.SPCX&&q.SPCX.ok&&q.SPCX.price!=null?'nominal':'offline', q.SPCX&&q.SPCX.price!=null?'SPCX quote live':'no quote');
+  const l=d.launchOps||{};
+  add('LAUNCH', l.ytd!=null&&l.ytd>0?'nominal':(l.ytd===0?'degraded':'offline'), l.ytd!=null?l.ytd+' launches YTD':'no launch data');
+  const c=d.constellation||{};
+  add('CONSTELLATION', c.count!=null?'nominal':'offline', c.count!=null?c.count.toLocaleString('en-US')+' sats tracked':'no orbital data');
+  const ct=d.contracts||{};
+  add('CONTRACTS', Array.isArray(ct.awards)?(ct.awards.length?'nominal':'degraded'):'offline', Array.isArray(ct.awards)?ct.awards.length+' awards tracked':'no award data');
+  const rg=d.regulatory||{};
+  add('REGULATORY', (rg.events&&rg.events.length)?'nominal':(rg.board?'degraded':'offline'), ((rg.events&&rg.events.length)||0)+' stream events');
+  add('SIGNAL', (d.news&&d.news.length)?'nominal':'degraded', ((d.news&&d.news.length)||0)+' headlines');
+  const pending=Object.values(q).filter(v=>v&&v.pending==='global-feed').length;
+  if(pending) add('GLOBAL FEED','degraded',pending+' names pending (Twelve Data)');
+  add('PULSE', d.pulse&&d.pulse.score!=null?'nominal':'degraded', d.pulse&&d.pulse.score!=null?d.pulse.score+'/100':'warming up');
+  $('telemetry').innerHTML='<span class="tl-lbl">Telemetry</span>'+items.map(s=>
+    `<span class="subsys ${s.state}" title="${esc(s.name+' — '+s.detail)}"><i></i>${s.name}</span>`).join('');
+}
+
+// ---- news filtering -------------------------------------------------------
+const FILTERS=[['all','All'],['launch','Launch'],['contract','Contract'],['starlink','Starlink'],['ai','AI'],['regulatory','Reg'],['market','Market']];
+function renderFilters(news){
+  const counts={};
+  news.forEach(n=>{const k=n.category||'general'; counts[k]=(counts[k]||0)+1;});
+  $('newsFilters').innerHTML=FILTERS.map(([k,lbl])=>{
+    const n=k==='all'?news.length:(counts[k]||0);
+    return `<button type="button" class="fchip ${newsFilter===k?'on':''}" data-cat="${k}">${lbl}<span class="n">${n}</span></button>`;
+  }).join('');
+}
+function renderFeed(news){
+  const list=newsFilter==='all'?news:news.filter(n=>(n.category||'general')===newsFilter);
+  $('feed').innerHTML=list.length?list.map(n=>
+    `<a class="news" href="${n.url||'#'}" target="_blank" rel="noopener">
+      <div class="h">${esc(n.headline)}</div>
+      <div class="m"><span class="tag ${n.category||''}">${(n.category||'general')}</span>
+      <span class="src">${esc(n.source)}${n.datetime?' · '+timeAgo(n.datetime):''}</span></div>
+    </a>`).join('')
+    :(news.length?'<div class="empty">No headlines match this filter.</div>'
+      :'<div class="empty">Feed quiet, or live news not yet wired. Headlines populate from Finnhub once deployed.</div>');
 }
 
 // ---- render ---------------------------------------------------------------
@@ -417,6 +642,7 @@ function render(d){
   $('mRange').textContent=spcx.low!=null?'$'+fmt(spcx.low)+' – $'+fmt(spcx.high):'—';
   $('mPrev').textContent=spcx.prevClose!=null?'$'+fmt(spcx.prevClose):'—';
   $('mCap').textContent=capUsd(spcx.marketCap);
+  spark('mSpark',(d.pulseHistory||[]).map(x=>x.spcx).filter(v=>v!=null),'var(--ion)',280,30);
 
   // pulse
   const p=d.pulse||{};
@@ -434,7 +660,11 @@ function render(d){
   $('lYtd').textContent=l.ytd??'—';
   $('lRate').innerHTML=l.successRate!=null?`<span class="${l.successRate>=95?'up':'warn'}">${l.successRate}%</span>`:'—';
   $('lDays').textContent=l.daysSinceLast!=null?l.daysSinceLast+'d':'—';
-  $('lNext').textContent=l.nextLaunch?l.nextLaunch.name:'—';
+  $('lLast').textContent=l.lastLaunch?l.lastLaunch.name:'—';
+  $('lLast').title=l.lastLaunch?`${l.lastLaunch.name} — ${l.lastLaunch.status||''}`:'';
+  const nl=l.nextLaunch;
+  $('lNext').textContent=nl?('NEXT · '+nl.name+(nl.pad?' · '+nl.pad:'')):'NEXT —';
+  $('lNext').title=nl?nl.name:'';
 
   // constellation
   const c=d.constellation||{};
@@ -446,11 +676,11 @@ function render(d){
   const ct=d.contracts||{};
   $('ctPill').textContent=(ct.last30??0)+' NEW · 30D'; $('ctPill').className='pill '+((ct.last30>0)?'nominal':'');
   $('ctList').innerHTML=(ct.awards||[]).slice(0,4).map(a=>
-    `<div class="kv"><span class="k" style="max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.agency||'—'} · ${a.description||''}</span><span class="v">${a.amount?usd(a.amount):'—'}</span></div>`).join('')
+    `<div class="kv"><span class="k" style="max-width:62%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.agency||'—')} · ${esc(a.description||'')}</span><span class="v">${a.amount?usd(a.amount):'—'}</span></div>`).join('')
     ||'<div class="empty">No federal awards in the lookback window.</div>';
 
-  // treemap
-  drawTreemap(q);
+  // ecosystem heat / table
+  renderEco(d);
 
   // divergence
   const dv=d.divergences||[];
@@ -463,54 +693,115 @@ function render(d){
   const rg=d.regulatory||{};
   const board=(rg.board&&rg.board.markets)||[];
   $('regBoard').innerHTML=board.length?board.map(m=>
-    `<span class="chip ${m.status}" title="${(m.note||'').replace(/"/g,'&quot;')}"><i></i>${m.country} · ${m.status.toUpperCase()}</span>`).join('')
+    `<span class="chip ${m.status}" title="${esc(m.note||'')}"><i></i>${m.country} · ${m.status.toUpperCase()}</span>`).join('')
     :'<div class="empty">Board empty.</div>';
   $('regBoardNote').textContent=rg.board?`Seed statuses as of ${rg.board.asOf} — hover a chip for context. Statuses are a judgement call: edit src/markets.js to update.`:'';
-  const pos=rg.counts?.pos??0, neg=rg.counts?.neg??0;
+  const pos=(rg.counts&&rg.counts.pos)??0, neg=(rg.counts&&rg.counts.neg)??0;
   const rPill=$('regPill'); rPill.textContent=`▲${pos} ▼${neg} · 14D`;
   rPill.className='pill '+(neg>pos?'caution':pos>0?'nominal':'');
   const evs=rg.events||[];
   $('regFeed').innerHTML=evs.length?evs.slice(0,14).map(e=>
     `<a class="reg-row" href="${e.link||'#'}" target="_blank" rel="noopener">
       <span class="dir ${e.direction||'neutral'}">${e.direction==='positive'?'▲':e.direction==='negative'?'▼':'●'}</span>
-      <span style="min-width:0"><span class="t">${e.title||''}</span><br>
-      <span class="src">${e.source||''}${e.date?' · '+timeAgo(e.date/1000):''}</span></span>
-      ${e.country?`<span class="c">${e.country}</span>`:''}
+      <span style="min-width:0"><span class="t">${esc(e.title)}</span><br>
+      <span class="src">${esc(e.source)}${e.date?' · '+timeAgo(e.date/1000):''}</span></span>
+      ${e.country?`<span class="c">${esc(e.country)}</span>`:''}
     </a>`).join('')
     :'<div class="empty">Stream quiet — live regulatory headlines populate from RSS once deployed.</div>';
 
-  // news
-  const feed=$('feed'); const news=d.news||[];
-  feed.innerHTML=news.length?news.map(n=>
-    `<a class="news" href="${n.url||'#'}" target="_blank" rel="noopener">
-      <div class="h">${n.headline||''}</div>
-      <div class="m"><span class="tag ${n.category||''}">${(n.category||'general')}</span>
-      <span class="src">${n.source||''} · ${n.datetime?timeAgo(n.datetime):''}</span></div>
-    </a>`).join('')
-    :'<div class="empty">Feed quiet, or live news not yet wired. Headlines populate from Finnhub once deployed.</div>';
+  // news + telemetry
+  const news=d.news||[];
+  renderFilters(news);
+  renderFeed(news);
+  renderTelemetry(d);
 
   // chrome
   const t=new Date(d.builtAt||Date.now());
-  $('syncLbl').textContent='SYNC '+t.toTimeString().slice(0,8)+(d.preview?' · SAMPLE':' · LIVE');
+  $('syncLbl').textContent='SYNC '+t.toTimeString().slice(0,8)+(d.preview?' · SAMPLE':STALE?' · STALE':' · LIVE');
   $('previewBanner').style.display=d.preview?'block':'none';
-  $('liveDot').style.background=d.preview?'var(--caution)':'var(--live)';
+  $('staleBadge').style.display=(STALE&&!d.preview)?'inline-block':'none';
+  $('liveDot').style.background=d.preview?'var(--caution)':STALE?'var(--critical)':'var(--live)';
+  tick(); // refresh countdowns immediately against the new data
 }
 
-// ---- boot + refresh -------------------------------------------------------
+// ---- per-second tick: launch countdown + sync countdown -------------------
+function tick(){
+  const nl=LAST&&LAST.launchOps&&LAST.launchOps.nextLaunch;
+  const el=$('lCountdown');
+  if(el){
+    if(nl&&nl.net){
+      const diff=new Date(nl.net).getTime()-Date.now();
+      const txt=fmtTminus(diff);
+      el.textContent=txt||'T- —';
+      el.className='tminus '+(diff<=0?'hold':diff<36e5?'go':'');
+    }else{ el.textContent='T- —'; el.className='tminus hold'; }
+  }
+  const cd=$('countdown');
+  if(cd){
+    if(PAUSED) cd.innerHTML='<b>PAUSED</b>';
+    else cd.innerHTML='NEXT <b>'+Math.max(0,Math.round((nextSyncAt-Date.now())/1000))+'s</b>';
+  }
+}
+
+// ---- data load + polling --------------------------------------------------
 async function load(){
   try{
     const r=await fetch('/api/dashboard',{cache:'no-store'});
     if(!r.ok) throw new Error('api');
     const d=await r.json();
-    if(!d || !d.quotes) throw new Error('shape');
+    if(!d||!d.quotes) throw new Error('shape');
+    LAST=d; LIVE=true; STALE=false;
     render(d);
   }catch(e){
-    render(SAMPLE); // preview / offline fallback
+    if(LIVE&&LAST){ STALE=true; render(LAST); }  // hold last-good live data, flag it
+    else { LAST=SAMPLE; render(SAMPLE); }         // never had live data -> preview
   }
 }
+function loop(){
+  nextSyncAt=Date.now()+POLL_MS;
+  clearTimeout(pollTimer);
+  pollTimer=setTimeout(()=>{ if(!PAUSED&&!document.hidden) load(); loop(); },POLL_MS);
+}
+function syncNow(){ load(); loop(); }
+
+// ---- controls -------------------------------------------------------------
+$('refreshBtn').onclick=syncNow;
+$('pauseBtn').onclick=()=>{
+  PAUSED=!PAUSED;
+  const b=$('pauseBtn');
+  b.classList.toggle('on',!PAUSED);
+  b.textContent=PAUSED?'▶ Auto':'⏸ Auto';
+  if(!PAUSED) syncNow(); else { clearTimeout(pollTimer); tick(); }
+};
+$('ecoToggle').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  ecoView=b.dataset.view; localStorage.setItem('orbit360.ecoView',ecoView);
+  if(LAST) renderEco(LAST);
+});
+$('newsFilters').addEventListener('click',e=>{
+  const b=e.target.closest('.fchip'); if(!b)return;
+  newsFilter=b.dataset.cat; localStorage.setItem('orbit360.newsFilter',newsFilter);
+  if(LAST){ renderFilters(LAST.news||[]); renderFeed(LAST.news||[]); }
+});
+$('tableView').addEventListener('click',e=>{
+  const th=e.target.closest('th[data-key]'); if(!th)return;
+  const k=th.dataset.key;
+  if(sortKey===k) sortDir*=-1; else { sortKey=k; sortDir=(k==='sym')?1:-1; }
+  if(LAST) renderTable(LAST);
+});
+document.addEventListener('keydown',e=>{
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
+  if(e.key==='r'||e.key==='R') syncNow();
+  if(e.key==='p'||e.key==='P') $('pauseBtn').click();
+});
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!PAUSED) syncNow(); });
+let rzTimer;
+window.addEventListener('resize',()=>{ clearTimeout(rzTimer); rzTimer=setTimeout(()=>{ if(LAST) render(LAST); },180); });
+
+// ---- boot -----------------------------------------------------------------
 load();
-setInterval(load,60000);
-window.addEventListener('resize',()=>{ /* redraw treemap on resize */ load(); });
+loop();
+setInterval(tick,1000);
 </script>
 </body>
 </html>
