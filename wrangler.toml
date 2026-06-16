@@ -20,6 +20,13 @@ id = "d840bf219e6c4b1d95ed43ef4e8c03c3"
 name = "SEND_EMAIL"
 destination_address = "samuel@mustardtreegroup.com"
 
+# Optional AI briefing (OFF by default). Uncomment to let the cron write a
+# 2-3 sentence "what changed since yesterday" narrative with Cloudflare Workers
+# AI — native, no API key, generous free allotment. The deterministic briefing
+# works with or without this; the AI only ever rewrites the computed facts.
+# [ai]
+# binding = "AI"
+
 # Poll + alert every 10 minutes.
 [triggers]
 crons = ["*/10 * * * *"]
