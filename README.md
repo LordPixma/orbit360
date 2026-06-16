@@ -14,16 +14,18 @@ complex — financial *and* operational. Built on Cloudflare Workers.
 
 | Panel | Source | Notes |
 |---|---|---|
+| **Daily Briefing** | computed (+ optional AI) | *What changed since yesterday* — a day-over-day diff of every metric, in plain language at the top of the board |
 | **Market** | Finnhub | SPCX price, change, range, market cap (15-min-class) |
 | **SpaceX Pulse** | computed | Operational-health score 0–100, plotted *against* the price |
 | **Launch Ops** | Launch Library 2 | Launches YTD, success rate, days-since-last, last launch, and a live **T‑minus countdown** to the next on the manifest |
 | **Constellation** | CelesTrak | Live Starlink satellites in orbit + 24h delta |
 | **Federal Awards** | USASpending | New NASA / Space Force / NRO awards (leading revenue signal) |
 | **Regulatory Radar** | RSS (keyless) | Country-by-country market-access board + live docket/licensing stream |
+| **Supply-Chain Migration** | RSS (keyless) | Taiwan→Vietnam relocation watch: supplier-geography board + live relocation/risk stream |
 | **Ecosystem Heat** | Finnhub | Treemap (sized by market cap, coloured by today's move) with hover detail, **toggleable to a sortable table** that also surfaces the small/global names the treemap can't show |
 | **Divergence Watch** | computed | Names that usually track SPCX but broke ranks today |
 | **Signal** | Finnhub | SpaceX + ecosystem news, tagged by what drives price, with **category filters** |
-| **Email alerts** | Cloudflare Email | Fires to you on significant events (no third party) |
+| **Email alerts** | Cloudflare Email | Fires to you on significant events — incl. launches, awards, regulatory & supply-chain shifts (no third party) |
 
 The ecosystem basket is tagged by *linkage* (direct supplier / partner / pure-play
 competitor / legacy prime / AI-infra) in `src/tickers.js`.
@@ -31,7 +33,7 @@ competitor / legacy prime / AI-infra) in `src/tickers.js`.
 ### Console controls (client-side, no backend changes needed)
 
 - **Telemetry status bar** — a per-feed health row (MARKET · LAUNCH · CONSTELLATION ·
-  CONTRACTS · REGULATORY · SIGNAL · PULSE, plus GLOBAL FEED when Twelve Data is on).
+  CONTRACTS · REGULATORY · SUPPLY-CHAIN · SIGNAL · PULSE, plus GLOBAL FEED when Twelve Data is on).
   Each is nominal / degraded / offline based purely on the snapshot, so you can see at
   a glance which source is degraded — the rest of the board keeps working regardless.
 - **Sync controls** — a countdown to the next auto-sync, a manual *Sync* button
@@ -149,6 +151,49 @@ the headline text is always right there to judge for yourself.
 
 ---
 
+## The supply-chain migration watch
+
+SpaceX's physical fundamentals include *where the hardware is built*. The company
+has pushed Starlink suppliers — notably Taiwanese terminal makers — to add
+capacity outside Taiwan on geopolitical-risk grounds, with **Vietnam** the main
+destination. That shift is visible in trade/industry news long before it shows up
+anywhere financial, so `src/supplychain.js` tracks it the same keyless way the
+regulatory radar works:
+
+- **Supplier geo board** (`SUPPLY_BOARD`) — seed geography for each key supplier
+  (`from → to`, status `migrating` / `diversifying` / `stable` / `risk`), honestly
+  labelled with its as-of date. Edit and redeploy to update.
+- **Live relocation stream** — targeted Google News RSS; each headline is filtered
+  to physical-supply items, then tagged with origin/destination geography and a
+  kind: ▲ `shift` (relocation / new capacity), ▼ `risk` (disruption / concentration),
+  or ● procedural. The 30-day shift/risk tally drives the panel pill, and fresh
+  shifts/risks from the last 24h fire an email alert.
+
+Same honest caveat as the radar: the geography and shift/risk tagging are
+heuristic, and the stream degrades to empty (never errors) if the feed shape
+changes. The headline text is always shown so you can judge for yourself.
+
+---
+
+## The daily briefing — "what changed since yesterday"
+
+`src/briefing.js` stores a compact **daily digest** of the board's headline metrics
+in KV and diffs today against the most recent prior day, emitting plain-language
+change items (SPCX move, Pulse delta + band change, overnight satellites, new
+launches/awards, regulatory swing, supply-chain shifts, ecosystem breadth). It is
+**deterministic and always on** — it only ever states computed deltas, so it can't
+hallucinate, and it shows *“No material change”* on a genuinely quiet day. It warms
+up after the first day of history accrues.
+
+An **optional AI narrative** turns those same facts into a 2–3 sentence morning
+brief. It's **off by default**; to enable it, uncomment the `[ai]` binding in
+`wrangler.toml` (native **Cloudflare Workers AI** — no API key, generous free
+allotment, no third party). The model is fed *only* the computed facts, the result
+is cached per day, and if it's absent or errors the deterministic bullets stand on
+their own.
+
+---
+
 ## Honest build notes
 
 - The feed integrations are written to each provider's **documented** request/response
@@ -163,5 +208,7 @@ the headline text is always right there to judge for yourself.
   that flag is why it's there.
 
 ## Roadmap
-- Supply-chain geo-migration watch (Taiwan → Vietnam)
-- Optional AI "what changed since yesterday" briefing
+- ~~Supply-chain geo-migration watch (Taiwan → Vietnam)~~ — shipped (`src/supplychain.js`)
+- ~~Optional AI "what changed since yesterday" briefing~~ — shipped (`src/briefing.js`; AI optional via Workers AI)
+- Persist the digest/briefing history to a queryable timeline view
+- National-regulator RSS feeds beyond Google News for the radar
