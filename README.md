@@ -16,17 +16,34 @@ complex — financial *and* operational. Built on Cloudflare Workers.
 |---|---|---|
 | **Market** | Finnhub | SPCX price, change, range, market cap (15-min-class) |
 | **SpaceX Pulse** | computed | Operational-health score 0–100, plotted *against* the price |
-| **Launch Ops** | Launch Library 2 | Launches YTD, success rate, days-since-last, next on manifest |
+| **Launch Ops** | Launch Library 2 | Launches YTD, success rate, days-since-last, last launch, and a live **T‑minus countdown** to the next on the manifest |
 | **Constellation** | CelesTrak | Live Starlink satellites in orbit + 24h delta |
 | **Federal Awards** | USASpending | New NASA / Space Force / NRO awards (leading revenue signal) |
 | **Regulatory Radar** | RSS (keyless) | Country-by-country market-access board + live docket/licensing stream |
-| **Ecosystem Heat** | Finnhub | Treemap: sized by market cap, coloured by today's move |
+| **Ecosystem Heat** | Finnhub | Treemap (sized by market cap, coloured by today's move) with hover detail, **toggleable to a sortable table** that also surfaces the small/global names the treemap can't show |
 | **Divergence Watch** | computed | Names that usually track SPCX but broke ranks today |
-| **Signal** | Finnhub | SpaceX + ecosystem news, tagged by what drives price |
+| **Signal** | Finnhub | SpaceX + ecosystem news, tagged by what drives price, with **category filters** |
 | **Email alerts** | Cloudflare Email | Fires to you on significant events (no third party) |
 
 The ecosystem basket is tagged by *linkage* (direct supplier / partner / pure-play
 competitor / legacy prime / AI-infra) in `src/tickers.js`.
+
+### Console controls (client-side, no backend changes needed)
+
+- **Telemetry status bar** — a per-feed health row (MARKET · LAUNCH · CONSTELLATION ·
+  CONTRACTS · REGULATORY · SIGNAL · PULSE, plus GLOBAL FEED when Twelve Data is on).
+  Each is nominal / degraded / offline based purely on the snapshot, so you can see at
+  a glance which source is degraded — the rest of the board keeps working regardless.
+- **Sync controls** — a countdown to the next auto-sync, a manual *Sync* button
+  (`R`), and a *pause/resume* toggle (`P`). Polling auto-pauses when the tab is hidden
+  (to spare your Finnhub quota) and refreshes the moment you return.
+- **Stale vs sample** — if a refresh fails after the board was live, it now *holds the
+  last good live data* and flags it `STALE` rather than silently swapping to the sample
+  preview. Sample/preview mode is only used before any live data has ever arrived.
+- **T‑minus countdown** ticks every second toward the next launch's NET (cyan inside
+  T‑1h), and a SPCX trend mini-spark sits under the Market panel.
+
+Preferences (heat/table view, news filter) persist in `localStorage`.
 
 ---
 
