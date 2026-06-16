@@ -209,6 +209,23 @@
   .reg-row:hover .t{color:var(--live)}
   .reg-row .c{font-family:var(--mono); font-size:9.5px; color:var(--muted); border:1px solid var(--grid); border-radius:4px; padding:0 5px; flex:0 0 auto; margin-left:auto}
 
+  /* ---- daily briefing ---- */
+  .briefing-lead{font-family:var(--body); font-size:14px; line-height:1.55; color:var(--ink);
+    border-left:2px solid var(--live); padding:1px 0 1px 13px; margin:0 0 13px}
+  .briefing-lead.empty{display:none}
+  .briefing-items{display:grid; grid-template-columns:repeat(2,1fr); gap:8px 26px}
+  @media(max-width:720px){.briefing-items{grid-template-columns:1fr}}
+  .bitem{display:flex; gap:9px; align-items:baseline; font-family:var(--mono); font-size:12px; line-height:1.45}
+  .bitem .ic{flex:0 0 auto; width:13px; text-align:center}
+  .bitem.up .ic{color:var(--nominal)} .bitem.down .ic{color:var(--critical)}
+  .bitem.warn .ic{color:var(--caution)} .bitem.info .ic{color:var(--live)} .bitem.flat .ic{color:var(--muted-2)}
+  .bitem .bx{min-width:0; color:var(--ink)}
+  .bitem .bl{color:var(--muted); margin-right:7px; text-transform:uppercase; font-size:9px; letter-spacing:.1em}
+
+  /* ---- supply-chain chips (reuse regulatory chip frame) ---- */
+  .chip.migrating i{background:var(--caution)} .chip.diversifying i{background:var(--live)}
+  .chip.stable i{background:var(--nominal)} .chip.risk i{background:var(--critical)}
+
   .foot{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted-2); letter-spacing:.06em; line-height:1.7}
   @media(prefers-reduced-motion:reduce){ .dot{animation:none} }
 </style>
@@ -235,6 +252,13 @@
   <div class="telemetry" id="telemetry" aria-label="Subsystem telemetry status"></div>
 
   <div class="grid">
+    <!-- DAILY BRIEFING: what changed since yesterday -->
+    <div class="card col-12">
+      <h3><span class="g">◢</span> Daily briefing — what changed since yesterday <span class="pill" id="brPill">—</span></h3>
+      <div class="briefing-lead empty" id="brNarrative"></div>
+      <div class="briefing-items" id="brItems"></div>
+    </div>
+
     <!-- HERO: market -->
     <div class="card col-4">
       <h3><span class="g">◢</span> Market</h3>
@@ -335,6 +359,22 @@
       </div>
     </div>
 
+    <!-- supply-chain migration -->
+    <div class="card col-12">
+      <h3><span class="g">◢</span> Supply-chain migration — Taiwan → Vietnam &amp; beyond <span class="pill" id="scPill">—</span></h3>
+      <div class="reg-grid">
+        <div>
+          <div class="lbl" style="margin-bottom:9px">SUPPLIER GEO BOARD</div>
+          <div class="chips" id="scBoard"></div>
+          <div class="empty" style="margin-top:10px" id="scBoardNote"></div>
+        </div>
+        <div>
+          <div class="lbl" style="margin-bottom:9px">LIVE RELOCATION STREAM</div>
+          <div class="reg-feed" id="scFeed"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- news -->
     <div class="card col-12">
       <h3><span class="g">◢</span> Signal — SpaceX &amp; ecosystem news</h3>
@@ -416,6 +456,29 @@ const SAMPLE = {
       {direction:'negative',country:'Italy',title:'Parliament committee questions Starlink government contract terms',source:'Sample wire',date:NOW_MS-21*36e5,link:'#'},
       {direction:'positive',country:'South Africa',title:'ICASA opens consultation on equity-equivalence licensing route',source:'Sample wire',date:NOW_MS-32*36e5,link:'#'},
       {direction:'neutral',country:'European Union',title:'EU member states debate satellite spectrum coordination framework',source:'Sample wire',date:NOW_MS-50*36e5,link:'#'}]},
+  supplyChain:{
+    counts:{shift:4,risk:1},
+    board:{asOf:'2026-06',suppliers:[
+      {name:'Wistron NeWeb',ticker:'6285.TW',component:'Starlink user terminals',from:'Taiwan',to:'Vietnam',status:'migrating',note:'SpaceX pushed terminal assembly out of Taiwan; Vietnam capacity ramping.'},
+      {name:'Universal Microwave',component:'RF terminal components',from:'Taiwan',to:'Vietnam',status:'migrating',note:'Shifting Starlink-related output toward Vietnam.'},
+      {name:'Wiwynn',component:'Ground/compute hardware',from:'Taiwan',to:'Vietnam',status:'diversifying',note:'Adding non-Taiwan capacity for resilience.'},
+      {name:'Filtronic',ticker:'FTC.L',component:'GaN amplifiers',from:'United Kingdom',to:'United Kingdom',status:'stable',note:'UK capacity expansion at home.'},
+      {name:'Sphere Corp',ticker:'347700.KS',component:'Starship superalloys',from:'South Korea',to:'South Korea',status:'stable',note:'Korea-based supply agreement.'}]},
+    events:[
+      {id:'sc1',title:'Wistron NeWeb expands Vietnam plant to lift Starlink terminal output',source:'DigiTimes',from:'Taiwan',to:'Vietnam',kind:'shift',date:NOW_MS-4*36e5,link:'#'},
+      {id:'sc2',title:'SpaceX asks Taiwanese suppliers to add capacity outside Taiwan',source:'Nikkei Asia',from:'Taiwan',to:'Vietnam',kind:'shift',date:NOW_MS-15*36e5,link:'#'},
+      {id:'sc3',title:'Universal Microwave eyes Vietnam line for satellite RF parts',source:'Economic Daily',from:'Taiwan',to:'Vietnam',kind:'shift',date:NOW_MS-28*36e5,link:'#'},
+      {id:'sc4',title:'Taiwan Strait tension raises concentration risk for terminal supply',source:'Reuters',from:'Taiwan',to:null,kind:'risk',date:NOW_MS-40*36e5,link:'#'},
+      {id:'sc5',title:'Thailand courts space-hardware factories with tax incentives',source:'Bangkok Post',from:null,to:'Thailand',kind:'shift',date:NOW_MS-60*36e5,link:'#'}]},
+  briefing:{asOf:'2026-06-16',prevDate:'2026-06-15',
+    narrative:'SpaceX held its debut gains, closing up 27.7% as the operational Pulse ticked to 76 (NOMINAL). The constellation added 54 satellites overnight and the Space Force booked a $733M NSSL task order, while AST SpaceMobile broke ranks with a 3.2% slide and two fresh Taiwan→Vietnam supplier-relocation headlines crossed the wire.',
+    items:[
+      {tone:'up',label:'SPCX',text:'SPCX +27.7% since yesterday ($135.00 → $172.40).'},
+      {tone:'up',label:'Pulse',text:'Operational Pulse 74 → 76 (+2).'},
+      {tone:'up',label:'Constellation',text:'+54 Starlink satellites overnight (now 8,912).'},
+      {tone:'up',label:'Contracts',text:'New federal award logged ($733.0M Space Force NSSL Phase 3).'},
+      {tone:'warn',label:'Regulatory',text:'Regulatory stream: +2 approval-side, +1 restriction-side new (14d ▲3/▼1).'},
+      {tone:'info',label:'Supply chain',text:'2 new supply-chain migration headlines (Taiwan→Vietnam watch; 4 in 30d).'}]},
   tickers:[
     {symbol:'SPCX',name:'SpaceX',tier:'subject',region:'US',linkage:'The subject. Space + AI after the xAI merger.'},
     {symbol:'SATS',name:'EchoStar',tier:'direct',region:'US',linkage:'Sold spectrum to SpaceX partly for equity; holds ~$11B of SpaceX stock.'},
@@ -600,6 +663,8 @@ function renderTelemetry(d){
   add('CONTRACTS', Array.isArray(ct.awards)?(ct.awards.length?'nominal':'degraded'):'offline', Array.isArray(ct.awards)?ct.awards.length+' awards tracked':'no award data');
   const rg=d.regulatory||{};
   add('REGULATORY', (rg.events&&rg.events.length)?'nominal':(rg.board?'degraded':'offline'), ((rg.events&&rg.events.length)||0)+' stream events');
+  const sc=d.supplyChain||{};
+  add('SUPPLY-CHAIN', (sc.events&&sc.events.length)?'nominal':(sc.board?'degraded':'offline'), ((sc.events&&sc.events.length)||0)+' relocation events');
   add('SIGNAL', (d.news&&d.news.length)?'nominal':'degraded', ((d.news&&d.news.length)||0)+' headlines');
   const pending=Object.values(q).filter(v=>v&&v.pending==='global-feed').length;
   if(pending) add('GLOBAL FEED','degraded',pending+' names pending (Twelve Data)');
@@ -628,6 +693,48 @@ function renderFeed(news){
     </a>`).join('')
     :(news.length?'<div class="empty">No headlines match this filter.</div>'
       :'<div class="empty">Feed quiet, or live news not yet wired. Headlines populate from Finnhub once deployed.</div>');
+}
+
+// ---- daily briefing -------------------------------------------------------
+function renderBriefing(d){
+  const b=d.briefing||{};
+  const pill=$('brPill');
+  pill.textContent=b.prevDate?('SINCE '+b.prevDate):'BASELINE';
+  const hasNeg=(b.items||[]).some(i=>i.tone==='down'||i.tone==='warn');
+  pill.className='pill '+(hasNeg?'caution':(b.items&&b.items.length?'nominal':''));
+  const lead=$('brNarrative');
+  if(b.narrative){ lead.textContent=b.narrative; lead.className='briefing-lead'; }
+  else { lead.textContent=''; lead.className='briefing-lead empty'; }
+  const icon={up:'▲',down:'▼',warn:'!',info:'◆',flat:'—'};
+  $('brItems').innerHTML=(b.items||[]).length?(b.items).map(i=>
+    `<div class="bitem ${i.tone||'flat'}"><span class="ic">${icon[i.tone]||'—'}</span>
+     <span class="bx"><span class="bl">${esc(i.label||'')}</span>${esc(i.text||'')}</span></div>`).join('')
+    :'<div class="empty">Briefing warms up after a day of history accrues.</div>';
+}
+
+// ---- supply-chain migration -----------------------------------------------
+function renderSupplyChain(d){
+  const sc=d.supplyChain||{};
+  const sup=(sc.board&&sc.board.suppliers)||[];
+  $('scBoard').innerHTML=sup.length?sup.map(s=>{
+    const route=s.from&&s.to&&s.from!==s.to?`${s.from} → ${s.to}`:(s.to||s.from||'');
+    return `<span class="chip ${s.status}" title="${esc((s.component||'')+(s.note?' · '+s.note:''))}"><i></i>${esc(s.name)}${route?' · '+esc(route):''}</span>`;
+  }).join('') : '<div class="empty">Board empty.</div>';
+  $('scBoardNote').textContent=sc.board?`Seed geography as of ${sc.board.asOf} — hover a chip for the component & note. Edit src/supplychain.js to update.`:'';
+  const sh=(sc.counts&&sc.counts.shift)??0, rk=(sc.counts&&sc.counts.risk)??0;
+  const pill=$('scPill'); pill.textContent=`${sh} SHIFT ▸ ${rk} RISK · 30D`;
+  pill.className='pill '+(rk>sh?'caution':sh>0?'nominal':'');
+  const evs=sc.events||[];
+  $('scFeed').innerHTML=evs.length?evs.slice(0,14).map(e=>{
+    const route=e.from&&e.to?`${e.from}→${e.to}`:(e.to?'→'+e.to:(e.from||''));
+    const dir=e.kind==='risk'?'negative':e.kind==='shift'?'positive':'neutral';
+    return `<a class="reg-row" href="${e.link||'#'}" target="_blank" rel="noopener">
+      <span class="dir ${dir}">${e.kind==='risk'?'▼':e.kind==='shift'?'▲':'●'}</span>
+      <span style="min-width:0"><span class="t">${esc(e.title)}</span><br>
+      <span class="src">${esc(e.source)}${e.date?' · '+timeAgo(e.date/1000):''}</span></span>
+      ${route?`<span class="c">${esc(route)}</span>`:''}
+    </a>`;
+  }).join('') : '<div class="empty">Stream quiet — relocation headlines populate from RSS once deployed.</div>';
 }
 
 // ---- render ---------------------------------------------------------------
@@ -708,6 +815,10 @@ function render(d){
       ${e.country?`<span class="c">${esc(e.country)}</span>`:''}
     </a>`).join('')
     :'<div class="empty">Stream quiet — live regulatory headlines populate from RSS once deployed.</div>';
+
+  // briefing + supply chain
+  renderBriefing(d);
+  renderSupplyChain(d);
 
   // news + telemetry
   const news=d.news||[];
