@@ -226,6 +226,28 @@
   .chip.migrating i{background:var(--caution)} .chip.diversifying i{background:var(--live)}
   .chip.stable i{background:var(--nominal)} .chip.risk i{background:var(--critical)}
 
+  /* ---- launch manifest ---- */
+  .lpad{display:grid; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); gap:10px}
+  .ltile{position:relative; border:1px solid var(--grid); border-radius:8px; padding:11px 12px;
+    background:linear-gradient(180deg,var(--panel-2),rgba(15,21,29,.4)); overflow:hidden}
+  .ltile::after{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--muted-2)}
+  .ltile.spx::after{background:var(--live)}
+  .ltile.soon::after{background:var(--caution)}
+  .ltile.flight::after{background:var(--nominal)}
+  .ltile .cd{font-family:var(--mono); font-weight:600; font-size:21px; line-height:1; letter-spacing:.01em; color:var(--ink)}
+  .ltile.soon .cd{color:var(--caution)} .ltile.flight .cd{color:var(--nominal)}
+  .ltile .when{font-family:var(--mono); font-size:10px; color:var(--muted-2); margin-top:4px}
+  .ltile .prov{font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--ion); margin-top:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .ltile.spx .prov{color:var(--live)}
+  .ltile .miss{font-size:13px; color:var(--ink); margin-top:3px; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .ltile .site{font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .lst{position:absolute; top:10px; right:11px; font-family:var(--mono); font-size:9px; letter-spacing:.08em;
+    padding:1px 6px; border-radius:4px; border:1px solid var(--grid); color:var(--muted)}
+  .lst.go{color:var(--nominal); border-color:rgba(63,185,80,.4)}
+  .lst.hold{color:var(--caution); border-color:rgba(210,153,34,.4)}
+  .lst.fail{color:var(--critical); border-color:rgba(248,81,73,.4)}
+
   .foot{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted-2); letter-spacing:.06em; line-height:1.7}
   @media(prefers-reduced-motion:reduce){ .dot{animation:none} }
 </style>
@@ -314,6 +336,12 @@
     <div class="card col-6">
       <h3><span class="g">◢</span> Federal awards <span class="pill" id="ctPill">—</span></h3>
       <div id="ctList"></div>
+    </div>
+
+    <!-- global launch manifest -->
+    <div class="card col-12">
+      <h3><span class="g">◢</span> Launch manifest — every upcoming orbital launch, all providers <span class="pill" id="lmPill">—</span></h3>
+      <div class="lpad" id="lmPad"></div>
     </div>
 
     <!-- treemap heat / table -->
@@ -416,6 +444,15 @@ const SAMPLE = {
   launchOps:{ytd:91,successRate:99,daysSinceLast:2,
     lastLaunch:{name:'Starlink Group 12-5',net:new Date(NOW_MS-2*864e5).toISOString(),status:'Launch Successful'},
     nextLaunch:{name:'Starlink Group 11-7',net:new Date(NOW_MS+26*36e5+14*6e4).toISOString(),pad:'LC-39A, Kennedy'}},
+  launches:[
+    {name:'Falcon 9 Block 5 | Starlink Group 11-7',net:new Date(NOW_MS+0.7*36e5).toISOString(),status:'Go',statusName:'Go for Launch',provider:'SpaceX',rocket:'Falcon 9 Block 5',pad:'SLC-4E',location:'Vandenberg SFB, CA, USA',mission:'Starlink Group 11-7',orbit:'LEO',isSpaceX:true},
+    {name:'Electron | The Sky Is Not The Limit',net:new Date(NOW_MS+5.2*36e5).toISOString(),status:'Go',statusName:'Go for Launch',provider:'Rocket Lab',rocket:'Electron',pad:'LC-1B',location:'Māhia, New Zealand',mission:'Synthetic-aperture radar smallsat',orbit:'SSO',isSpaceX:false},
+    {name:'Long March 2D | Yaogan Group',net:new Date(NOW_MS+14*36e5).toISOString(),status:'TBC',statusName:'To Be Confirmed',provider:'CASC',rocket:'Long March 2D',pad:'LC-9',location:'Taiyuan, China',mission:'Yaogan reconnaissance group',orbit:'SSO',isSpaceX:false},
+    {name:'Falcon 9 Block 5 | NROL classified',net:new Date(NOW_MS+22*36e5).toISOString(),status:'Go',statusName:'Go for Launch',provider:'SpaceX',rocket:'Falcon 9 Block 5',pad:'SLC-40',location:'Cape Canaveral SFS, FL, USA',mission:'National security payload',orbit:'LEO',isSpaceX:true},
+    {name:'Ariane 6 | Galileo L13',net:new Date(NOW_MS+2.1*864e5).toISOString(),status:'TBD',statusName:'To Be Determined',provider:'Arianespace',rocket:'Ariane 62',pad:'ELA-4',location:"Kourou, French Guiana",mission:'Galileo navigation pair',orbit:'MEO',isSpaceX:false},
+    {name:'New Glenn | Blue Moon MK1',net:new Date(NOW_MS+3.4*864e5).toISOString(),status:'TBD',statusName:'To Be Determined',provider:'Blue Origin',rocket:'New Glenn',pad:'LC-36',location:'Cape Canaveral SFS, FL, USA',mission:'Lunar lander demo',orbit:'TLI',isSpaceX:false},
+    {name:'LVM3 | GSAT-N2 follow-on',net:new Date(NOW_MS+5.0*864e5).toISOString(),status:'TBD',statusName:'To Be Determined',provider:'ISRO',rocket:'LVM3',pad:'SLP',location:'Satish Dhawan SC, India',mission:'Geostationary comms satellite',orbit:'GTO',isSpaceX:false},
+    {name:'Soyuz 2.1b | Glonass-K2',net:new Date(NOW_MS+6.6*864e5).toISOString(),status:'TBD',statusName:'To Be Determined',provider:'Roscosmos',rocket:'Soyuz 2.1b',pad:'Site 43/4',location:'Plesetsk Cosmodrome, Russia',mission:'Navigation satellite',orbit:'MEO',isSpaceX:false}],
   constellation:{count:8912,delta:54,history:[8740,8772,8772,8801,8845,8858,8858,8902,8912]},
   contracts:{last30:2,awards:[
     {id:'s1',agency:'Space Force',amount:733000000,date:'2026-05-28',description:'NSSL Phase 3 launch services task order'},
@@ -737,6 +774,66 @@ function renderSupplyChain(d){
   }).join('') : '<div class="empty">Stream quiet — relocation headlines populate from RSS once deployed.</div>';
 }
 
+// ---- launch manifest ------------------------------------------------------
+// Format a T-minus (or T-plus, post-liftoff) countdown from an ISO timestamp.
+function tMinus(netIso){
+  if(!netIso) return {text:'T- --:--:--', state:''};
+  const t=new Date(netIso).getTime();
+  if(isNaN(t)) return {text:'T- --:--:--', state:''};
+  const diff=t-Date.now(), abs=Math.abs(diff);
+  const d=Math.floor(abs/864e5), h=Math.floor((abs%864e5)/36e5),
+        m=Math.floor((abs%36e5)/6e4), s=Math.floor((abs%6e4)/1e3);
+  const p=n=>String(n).padStart(2,'0');
+  const body=d>0?`${d}d ${p(h)}:${p(m)}:${p(s)}`:`${p(h)}:${p(m)}:${p(s)}`;
+  // state: "flight" just after liftoff, "soon" within 60 min, else default
+  const state = diff<0 ? (abs<2*36e5?'flight':'') : (diff<60*6e4?'soon':'');
+  return {text:(diff>=0?'T- ':'T+ ')+body, state};
+}
+function launchWhen(netIso){
+  if(!netIso) return 'NET TBD';
+  const t=new Date(netIso); if(isNaN(t)) return 'NET TBD';
+  return 'NET '+t.toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function statusClass(s){
+  const x=(s||'').toLowerCase();
+  if(x.includes('success')||x.includes('go')) return 'go';
+  if(x.includes('fail')||x.includes('partial')) return 'fail';
+  if(x.includes('hold')||x.includes('tbd')||x.includes('tbc')) return 'hold';
+  return '';
+}
+function renderLaunches(list){
+  const pad=$('lmPad'); const ls=list||[];
+  const pill=$('lmPill');
+  const soon=ls.filter(l=>{const t=new Date(l.net).getTime(); return !isNaN(t)&&t-Date.now()<24*36e5&&t-Date.now()>-2*36e5;}).length;
+  pill.textContent=ls.length?`${ls.length} ON MANIFEST · ${soon} <24H`:'NO DATA';
+  pill.className='pill '+(soon>0?'nominal':'');
+  pad.innerHTML=ls.length?ls.map(l=>{
+    const cd=tMinus(l.net);
+    const tileState=[l.isSpaceX?'spx':'', cd.state].filter(Boolean).join(' ');
+    const st=statusClass(l.status);
+    const head=[l.provider,l.rocket].filter(Boolean).join(' · ')||'Launch provider TBD';
+    const site=[l.location||l.pad, l.orbit?'→ '+l.orbit:''].filter(Boolean).join(' ');
+    const provTitle=l.providerFull&&l.providerFull!==l.provider?l.providerFull:head;
+    return `<div class="ltile ${tileState}" data-net="${esc(l.net||'')}">
+      ${l.status?`<span class="lst ${st}">${esc(l.status)}</span>`:''}
+      <div class="cd" data-cd>${cd.text}</div>
+      <div class="when">${launchWhen(l.net)}</div>
+      <div class="prov" title="${esc(provTitle)}">${esc(head)}</div>
+      <div class="miss">${esc(l.mission||l.name||'Payload TBD')}</div>
+      <div class="site">${esc(site||'Site TBD')}</div>
+    </div>`;
+  }).join(''):'<div class="empty">Manifest quiet — upcoming launches populate from Launch Library 2 once deployed.</div>';
+}
+// Tick the visible T-minus countdowns once a second without a full re-render.
+function tickCountdowns(){
+  document.querySelectorAll('.ltile[data-net]').forEach(tile=>{
+    const cd=tMinus(tile.getAttribute('data-net'));
+    const el=tile.querySelector('[data-cd]'); if(el) el.textContent=cd.text;
+    tile.classList.toggle('soon', cd.state==='soon');
+    tile.classList.toggle('flight', cd.state==='flight');
+  });
+}
+
 // ---- render ---------------------------------------------------------------
 function render(d){
   const q=d.quotes||{}; const spcx=q.SPCX||{};
@@ -772,6 +869,9 @@ function render(d){
   const nl=l.nextLaunch;
   $('lNext').textContent=nl?('NEXT · '+nl.name+(nl.pad?' · '+nl.pad:'')):'NEXT —';
   $('lNext').title=nl?nl.name:'';
+
+  // global launch manifest
+  renderLaunches(d.launches);
 
   // constellation
   const c=d.constellation||{};
@@ -852,6 +952,7 @@ function tick(){
     if(PAUSED) cd.innerHTML='<b>PAUSED</b>';
     else cd.innerHTML='NEXT <b>'+Math.max(0,Math.round((nextSyncAt-Date.now())/1000))+'s</b>';
   }
+  tickCountdowns(); // live T-minus on every launch-manifest tile
 }
 
 // ---- data load + polling --------------------------------------------------

@@ -100,3 +100,81 @@ export async function getLaunchOps(env) {
   await env.ORBIT_KV.put(cacheKey, JSON.stringify(payload), { expirationTtl: 43200 });
   return payload;
 }
+
+// --- global launch manifest (Launch Library 2 / The Space Devs) -------------
+// Every upcoming orbital launch on the manifest — all providers, worldwide.
+// "Monitor the rocket" taken literally: who's flying next, on what, from where.
+// Cached ~30 min so the live T-minus countdowns stay current without hammering
+// the (rate-limited) anonymous LL2 endpoint.
+const SPACEX_LSP_ID = 121;
+
+// Launch Library returns providers by full legal name ("China Aerospace Science
+// and Technology Corporation"). Shorten the common ones so the tiles stay legible.
+const PROVIDER_SHORT = {
+  'China Aerospace Science and Technology Corporation': 'CASC',
+  'China Aerospace Science and Industry Corporation': 'CASIC',
+  'United Launch Alliance': 'ULA',
+  'Indian Space Research Organization': 'ISRO',
+  'Indian Space Research Organisation': 'ISRO',
+  'National Aeronautics and Space Administration': 'NASA',
+  'Japan Aerospace Exploration Agency': 'JAXA',
+  'Mitsubishi Heavy Industries': 'MHI',
+  'Russian Federal Space Agency (ROSCOSMOS)': 'Roscosmos',
+  'Roscosmos State Corporation for Space Activities': 'Roscosmos',
+  'Northrop Grumman Innovation Systems': 'Northrop Grumman',
+  'Northrop Grumman Space Systems': 'Northrop Grumman',
+  'Firefly Aerospace': 'Firefly',
+  'Korea Aerospace Research Institute': 'KARI',
+  'European Space Agency': 'ESA',
+  'International Launch Services': 'ILS',
+  'Beijing Interstellar Glory Space Technology': 'iSpace',
+  'Galactic Energy': 'Galactic Energy',
+  'Relativity Space': 'Relativity',
+};
+
+function shortProvider(name) {
+  if (!name) return null;
+  if (PROVIDER_SHORT[name]) return PROVIDER_SHORT[name];
+  // fall back to a trailing acronym in parentheses, e.g. "... (ESA)"
+  const paren = name.match(/\(([A-Za-z0-9.\- ]{2,14})\)/);
+  if (paren) return paren[1];
+  return name; // already short, or unknown — the tile truncates if long
+}
+
+export async function getAllLaunches(env) {
+  const cacheKey = 'launches:upcoming';
+  const cached = await env.ORBIT_KV.get(cacheKey, 'json');
+  if (cached && Date.now() - cached.fetchedAt < 1800e3) return cached;
+
+  let launches = [];
+  try {
+    // normal mode carries provider / rocket / pad detail; ordered soonest-first.
+    // pull a few extra so we can drop already-flown launches and still fill the card.
+    const data = await ll2('/launch/upcoming/?limit=16&ordering=net', env);
+    const cutoff = Date.now() - 6 * 3600e3; // keep just-flown launches visible ~6h
+    launches = (data.results || [])
+      .filter(l => !l.net || new Date(l.net).getTime() >= cutoff)
+      .slice(0, 12)
+      .map(l => ({
+      name: l.name || null,
+      net: l.net || null,
+      windowStart: l.window_start || null,
+      windowEnd: l.window_end || null,
+      status: l.status?.abbrev || l.status?.name || null,
+      statusName: l.status?.name || null,
+      provider: shortProvider(l.launch_service_provider?.name),
+      providerFull: l.launch_service_provider?.name || null,
+      rocket: l.rocket?.configuration?.name || l.rocket?.configuration?.full_name || null,
+      pad: l.pad?.name || null,
+      location: l.pad?.location?.name || null,
+      mission: l.mission?.name || null,
+      orbit: l.mission?.orbit?.abbrev || l.mission?.orbit?.name || null,
+      isSpaceX: l.launch_service_provider?.id === SPACEX_LSP_ID
+        || /spacex/i.test(l.launch_service_provider?.name || ''),
+    }));
+  } catch (_) {}
+
+  const payload = { launches, fetchedAt: Date.now() };
+  await env.ORBIT_KV.put(cacheKey, JSON.stringify(payload), { expirationTtl: 3600 });
+  return payload;
+}

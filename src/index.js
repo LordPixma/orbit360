@@ -6,7 +6,7 @@
 
 import { getQuotes, getNews } from './finnhub.js';
 import { getGlobalQuotes } from './twelvedata.js';
-import { getConstellation, getLaunchOps } from './spacedata.js';
+import { getConstellation, getLaunchOps, getAllLaunches } from './spacedata.js';
 import { getContracts } from './contracts.js';
 import { getRegulatory } from './regulatory.js';
 import { getSupplyChain } from './supplychain.js';
@@ -60,12 +60,13 @@ async function buildSnapshot(env) {
   const day = new Date().toISOString().slice(0, 10);
 
   // pull everything in parallel; each fetcher degrades gracefully on its own
-  const [usQuotes, globalQuotes, news, constellation, launchOps, contracts, regulatory, supplyChain] = await Promise.all([
+  const [usQuotes, globalQuotes, news, constellation, launchOps, launches, contracts, regulatory, supplyChain] = await Promise.all([
     getQuotes(usTickers(), env),
     getGlobalQuotes(globalTickers(), env),
     getNews(env),
     getConstellation(env),
     getLaunchOps(env),
+    getAllLaunches(env),
     getContracts(env),
     getRegulatory(env),
     getSupplyChain(env),
@@ -98,6 +99,7 @@ async function buildSnapshot(env) {
     news,
     constellation,
     launchOps,
+    launches,
     contracts,
     regulatory,
     supplyChain,
