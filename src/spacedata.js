@@ -45,15 +45,21 @@ export async function getConstellation(env) {
 // --- launch cadence (Launch Library 2 / The Space Devs) ---------------------
 // The company's heartbeat: launches YTD, success rate, days since last launch,
 // next launch on the manifest.
-const LL2 = 'https://ll.thespacedevs.com/2.2.0';
+// The Space Devs runs two hosts on the same schema:
+//   - production (ll)  : freshest data, but throttles anon traffic to ~15 req/hr
+//     and answers 429 once you cross it. Cloudflare's *shared* egress IP blows
+//     that ceiling collectively (proven: the edge gets 429 while a home IP gets
+//     200 at the same instant), which blanked both Launch Ops and the manifest.
+//   - dev (lldev)      : a free, keyless mirror that's far more lenient. Data can
+//     lag a little, but it actually works from the edge.
+// So default to the free dev host; if an LL2_API_KEY is set, use production with
+// the token (per-account limit, escapes the shared-IP problem entirely).
+const LL2_PROD = 'https://ll.thespacedevs.com/2.2.0';
+const LL2_DEV = 'https://lldev.thespacedevs.com/2.2.0';
+const ll2Base = (env) => (env.LL2_API_KEY ? LL2_PROD : LL2_DEV);
 
-// LL2 throttles anonymous traffic to ~15 requests/hour and answers 429 once you
-// cross it — and Cloudflare's shared egress IP can hit that ceiling collectively.
-// Two defences:
-//   1. Optional auth: set the LL2_API_KEY secret (a free The Space Devs account)
-//      to lift the limit; the header is sent only when the key is present.
-//   2. Shared backoff: the first 429 parks all LL2 calls in KV for a cool-off
-//      window so a cold-cache request storm can't keep burning the quota.
+// Shared backoff: the first 429 parks all LL2 calls in KV for a cool-off window
+// so a cold-cache request storm can't keep burning the quota.
 const LL2_BACKOFF_KEY = 'll2:backoff-until';
 const LL2_BACKOFF_MS = 20 * 60e3; // cool off ~20 min after a throttle
 
@@ -84,7 +90,7 @@ async function ll2Fetch(path, env) {
   const headers = { 'User-Agent': 'Orbit360/1.0 (personal dashboard)' };
   if (env.LL2_API_KEY) headers['Authorization'] = `Token ${env.LL2_API_KEY}`;
 
-  const res = await fetch(`${LL2}${path}`, { cf: { cacheTtl: 3600 }, headers });
+  const res = await fetch(`${ll2Base(env)}${path}`, { cf: { cacheTtl: 3600 }, headers });
   if (res.status === 429) {
     await env.ORBIT_KV.put(LL2_BACKOFF_KEY, String(Date.now() + LL2_BACKOFF_MS),
       { expirationTtl: Math.ceil(LL2_BACKOFF_MS / 1000) + 5 });
