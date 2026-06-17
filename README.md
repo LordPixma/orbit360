@@ -203,6 +203,17 @@ their own.
   tweak or two (most likely candidates: the USASpending field labels and the
   Launch Library SpaceX provider id, currently `lsp__id=121` — verify via
   `https://ll.thespacedevs.com/2.2.0/agencies/?search=SpaceX`).
+- **Launch Library 2 rate-limits anonymous traffic to ~15 req/hr** and answers 429
+  past that — and Cloudflare's *shared* egress IP can hit that ceiling collectively,
+  which blanks both **Launch Ops** and the **Launch Manifest**. Two defences are wired
+  in `src/spacedata.js`: (a) the first 429 parks all LL2 calls in a ~20-min KV backoff
+  so a cold-cache request storm can't keep burning the quota, and both feeds **retain
+  their last-good data** through a failure instead of zeroing out; (b) set a free
+  account's key as a secret to lift the limit entirely:
+  ```bash
+  npx wrangler secret put LL2_API_KEY   # from a free thespacedevs.com account
+  ```
+  The header is sent only when the key is present, so the keyless path keeps working.
 - Correlation and the Pulse-vs-price chart **warm up** over a few sessions, since
   they accumulate daily closes in KV as the cron runs.
 - `nodejs_compat` is enabled for `mimetext`; if email throws on a Buffer reference,

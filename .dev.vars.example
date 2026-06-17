@@ -1,3 +1,4 @@
 # Copy to .dev.vars for local `wrangler dev`. NEVER commit .dev.vars.
 FINNHUB_API_KEY="your-finnhub-key-here"
 # TWELVEDATA_API_KEY="your-twelvedata-key-here"   # global tickers (later)
+# LL2_API_KEY="your-thespacedevs-key-here"        # lifts Launch Library 2's anon rate limit
