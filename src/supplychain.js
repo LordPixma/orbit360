@@ -60,6 +60,7 @@ export async function getSupplyChain(env) {
   if (cached && Date.now() - cached.fetchedAt < 60 * 60e3) return cached;
 
   let events = [];
+  let anyOk = false;
   for (const src of SOURCES) {
     try {
       const res = await fetch(src.url, {
@@ -67,9 +68,18 @@ export async function getSupplyChain(env) {
         headers: { 'User-Agent': 'Orbit360/1.0 (personal dashboard)' },
       });
       if (!res.ok) continue;
+      anyOk = true;
       const xml = await res.text();
       events = events.concat(parseRss(xml).map(annotate).filter(Boolean));
     } catch (_) { /* one dead source never takes down the watch */ }
+  }
+
+  // Google News RSS is flaky from cloud IPs. If every source failed, keep the last
+  // good stream instead of wiping it; a successful-but-empty fetch is left as quiet.
+  if (!anyOk && cached && cached.events?.length) {
+    const kept = { ...cached, board: SUPPLY_BOARD, stale: true, fetchedAt: Date.now() };
+    await env.ORBIT_KV.put(cacheKey, JSON.stringify(kept), { expirationTtl: 7200 });
+    return kept;
   }
 
   // de-dupe (Google News repeats across queries), newest first, trim
