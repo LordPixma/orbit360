@@ -144,7 +144,9 @@ function shortProvider(name) {
 export async function getAllLaunches(env) {
   const cacheKey = 'launches:upcoming';
   const cached = await env.ORBIT_KV.get(cacheKey, 'json');
-  if (cached && Date.now() - cached.fetchedAt < 1800e3) return cached;
+  // serve a cached list only if it's fresh AND non-empty; an empty cache (from a
+  // throttled fetch) must not block a retry.
+  if (cached && cached.launches?.length && Date.now() - cached.fetchedAt < 1800e3) return cached;
 
   let launches = [];
   try {
@@ -173,6 +175,14 @@ export async function getAllLaunches(env) {
         || /spacex/i.test(l.launch_service_provider?.name || ''),
     }));
   } catch (_) {}
+
+  // LL2 throttles anonymous traffic hard — if this fetch came back empty but we
+  // have a previous good list, keep showing it rather than blanking the card.
+  if (!launches.length && cached?.launches?.length) {
+    const kept = { ...cached, stale: true, fetchedAt: Date.now() };
+    await env.ORBIT_KV.put(cacheKey, JSON.stringify(kept), { expirationTtl: 3600 });
+    return kept;
+  }
 
   const payload = { launches, fetchedAt: Date.now() };
   await env.ORBIT_KV.put(cacheKey, JSON.stringify(payload), { expirationTtl: 3600 });
