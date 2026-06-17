@@ -7,8 +7,9 @@ const USASPENDING = 'https://api.usaspending.gov/api/v2/search/spending_by_award
 export async function getContracts(env) {
   const cacheKey = 'contracts:latest';
   const cached = await env.ORBIT_KV.get(cacheKey, 'json');
-  // serve cache only if fresh AND non-empty, so a failed fetch can't stick as "no awards"
-  if (cached && cached.awards?.length && Date.now() - cached.fetchedAt < 12 * 3600e3) return cached;
+  // serve a good list for 12h; serve an empty/failed result for only 30 min so we
+  // retry the (flaky-from-the-edge) API periodically without re-hitting it every build.
+  if (cached && Date.now() - cached.fetchedAt < (cached.awards?.length ? 12 * 3600e3 : 30 * 60e3)) return cached;
 
   const now = new Date();
   const start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
@@ -28,24 +29,40 @@ export async function getContracts(env) {
 
   let awards = [];
   let ok = false;
-  try {
-    const res = await fetch(USASPENDING, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      ok = true;
-      awards = (data.results || []).map(a => ({
-        id: a['Award ID'],
-        amount: a['Award Amount'],
-        agency: a['Awarding Agency'],
-        date: a['Start Date'],
-        description: a['Description'],
-      }));
-    }
-  } catch (_) {}
+  // USASpending sits behind Cloudflare and erratically answers Worker requests with
+  // 525 (SSL handshake failed) or just hangs. Retry a few times, but bound each
+  // attempt so a hang can never stall the whole snapshot build.
+  for (let attempt = 1; attempt <= 2 && !ok; attempt++) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 5000);
+    try {
+      const res = await fetch(USASPENDING, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'Orbit360/1.0 (personal dashboard)',
+        },
+        body: JSON.stringify(body),
+        signal: ctl.signal,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        ok = true;
+        awards = (data.results || []).map(a => ({
+          id: a['Award ID'],
+          amount: a['Award Amount'],
+          agency: a['Awarding Agency'],
+          date: a['Start Date'],
+          description: a['Description'],
+        }));
+      } else if (res.status < 500) {
+        break; // a real client error won't fix itself on retry
+      }
+    } catch (_) { /* abort/network — fall through to retry */ }
+    finally { clearTimeout(timer); }
+    if (!ok && attempt < 2) await new Promise(r => setTimeout(r, 300));
+  }
 
   // keep the last good award list through a transient API failure
   if (!ok && cached && cached.awards?.length) {
