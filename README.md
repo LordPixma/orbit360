@@ -18,6 +18,7 @@ complex — financial *and* operational. Built on Cloudflare Workers.
 | **Market** | Finnhub | SPCX price, change, range, market cap (15-min-class) |
 | **SpaceX Pulse** | computed | Operational-health score 0–100, plotted *against* the price |
 | **Launch Ops** | Launch Library 2 | Launches YTD, success rate, days-since-last, last launch, and a live **T‑minus countdown** to the next on the manifest |
+| **Launch Manifest** | Launch Library 2 | Every upcoming orbital launch, all providers worldwide, with live T-minus countdowns |
 | **Constellation** | CelesTrak | Live Starlink satellites in orbit + 24h delta |
 | **Federal Awards** | USASpending | New NASA / Space Force / NRO awards (leading revenue signal) |
 | **Regulatory Radar** | RSS (keyless) | Country-by-country market-access board + live docket/licensing stream |
