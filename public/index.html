@@ -801,8 +801,10 @@ function statusClass(s){
   if(x.includes('hold')||x.includes('tbd')||x.includes('tbc')) return 'hold';
   return '';
 }
-function renderLaunches(list){
-  const pad=$('lmPad'); const ls=list||[];
+function renderLaunches(data){
+  // live API sends {launches:[...],fetchedAt}; the sample sends a bare array — accept both
+  const ls = Array.isArray(data) ? data : (data && Array.isArray(data.launches) ? data.launches : []);
+  const pad=$('lmPad');
   const pill=$('lmPill');
   const soon=ls.filter(l=>{const t=new Date(l.net).getTime(); return !isNaN(t)&&t-Date.now()<24*36e5&&t-Date.now()>-2*36e5;}).length;
   pill.textContent=ls.length?`${ls.length} ON MANIFEST · ${soon} <24H`:'NO DATA';
