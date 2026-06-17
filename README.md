@@ -197,12 +197,19 @@ their own.
 
 ## Honest build notes
 
-- The feed integrations are written to each provider's **documented** request/response
-  shape, but the build environment couldn't reach those hosts, so they weren't hit
-  live. Run `npx wrangler tail` on first deploy and expect *possibly* a field-name
-  tweak or two (most likely candidates: the USASpending field labels and the
-  Launch Library SpaceX provider id, currently `lsp__id=121` — verify via
-  `https://ll.thespacedevs.com/2.2.0/agencies/?search=SpaceX`).
+- **Two feeds resist Cloudflare's edge specifically** (both work fine from a normal IP,
+  so every feed degrades gracefully — last-good retention, no card ever errors):
+  - **Constellation (CelesTrak):** CelesTrak soft-rate-limits per IP and answers a 403
+    *"GP data has not updated since your last download"* to the shared egress IP. The
+    count seeds whenever a request catches an un-throttled window, then sticks.
+  - **Federal Awards (USASpending):** USASpending sits behind Cloudflare and answers
+    Worker subrequests with **HTTP 525 (SSL handshake failed)** — a persistent
+    Cloudflare-edge-to-Cloudflare-origin issue. `src/contracts.js` retries with a bounded
+    timeout (so it never stalls the build) and caches the failure briefly; the card fills
+    if/when USASpending serves the edge. (The endpoint itself was also fixed:
+    `spend_by_award` → `spending_by_award`.)
+- All feeds are written to each provider's **documented** request/response shape; run
+  `npx wrangler tail` on first deploy to spot any field-name drift.
 - **Launch Library 2 rate-limits its production host (`ll`) to ~15 req/hr** and answers
   429 past that — and Cloudflare's *shared* egress IP hits that ceiling collectively
   (proven: the edge gets 429 while a home IP gets 200 at the same instant), which
