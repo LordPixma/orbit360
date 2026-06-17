@@ -11,16 +11,25 @@ export async function getConstellation(env) {
   const cacheKey = 'constellation:latest';
   const histKey = 'constellation:history'; // [{date, count}], newest last
   const cached = await env.ORBIT_KV.get(cacheKey, 'json');
-  if (cached && Date.now() - cached.fetchedAt < 6 * 3600e3) return cached;
+  // serve cache only if fresh AND it has a real count (a 403/empty must not stick)
+  if (cached && cached.count != null && Date.now() - cached.fetchedAt < 6 * 3600e3) return cached;
 
   let count = null;
   try {
     const res = await fetch(CELESTRAK, { cf: { cacheTtl: 3600 } });
     if (res.ok) {
       const arr = await res.json();
-      count = Array.isArray(arr) ? arr.length : null;
+      if (Array.isArray(arr) && arr.length) count = arr.length;
     }
   } catch (_) {}
+
+  // CelesTrak soft-rate-limits shared-IP callers with a 403 "use your cache" reply.
+  // Keep the last good count rather than blanking the hero number.
+  if (count == null && cached && cached.count != null) {
+    const kept = { ...cached, stale: true, fetchedAt: Date.now() };
+    await env.ORBIT_KV.put(cacheKey, JSON.stringify(kept), { expirationTtl: 86400 });
+    return kept;
+  }
 
   // maintain a small daily history for the delta + sparkline
   const today = new Date().toISOString().slice(0, 10);
