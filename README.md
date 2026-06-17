@@ -203,17 +203,19 @@ their own.
   tweak or two (most likely candidates: the USASpending field labels and the
   Launch Library SpaceX provider id, currently `lsp__id=121` — verify via
   `https://ll.thespacedevs.com/2.2.0/agencies/?search=SpaceX`).
-- **Launch Library 2 rate-limits anonymous traffic to ~15 req/hr** and answers 429
-  past that — and Cloudflare's *shared* egress IP can hit that ceiling collectively,
-  which blanks both **Launch Ops** and the **Launch Manifest**. Two defences are wired
-  in `src/spacedata.js`: (a) the first 429 parks all LL2 calls in a ~20-min KV backoff
-  so a cold-cache request storm can't keep burning the quota, and both feeds **retain
-  their last-good data** through a failure instead of zeroing out; (b) set a free
-  account's key as a secret to lift the limit entirely:
+- **Launch Library 2 rate-limits its production host (`ll`) to ~15 req/hr** and answers
+  429 past that — and Cloudflare's *shared* egress IP hits that ceiling collectively
+  (proven: the edge gets 429 while a home IP gets 200 at the same instant), which
+  blanked both **Launch Ops** and the **Launch Manifest**. So `src/spacedata.js` defaults
+  to The Space Devs' **free, keyless dev mirror** (`lldev.thespacedevs.com`) — same
+  schema and agency IDs, far more lenient, just slightly less fresh. Hardening on top:
+  LL2 calls are funnelled through a single-file queue (300 ms gap) so a cold rebuild
+  can't burst-trip the limiter, the first 429 parks all calls in a ~20-min KV backoff,
+  and both feeds **retain their last-good data** through a failure instead of zeroing.
+  To use the freshest production data instead, set a key (lifts the limit per-account):
   ```bash
-  npx wrangler secret put LL2_API_KEY   # from a free thespacedevs.com account
+  npx wrangler secret put LL2_API_KEY   # optional; switches to the ll production host
   ```
-  The header is sent only when the key is present, so the keyless path keeps working.
 - Correlation and the Pulse-vs-price chart **warm up** over a few sessions, since
   they accumulate daily closes in KV as the cron runs.
 - `nodejs_compat` is enabled for `mimetext`; if email throws on a Buffer reference,
