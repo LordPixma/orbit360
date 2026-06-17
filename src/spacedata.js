@@ -47,11 +47,49 @@ export async function getConstellation(env) {
 // next launch on the manifest.
 const LL2 = 'https://ll.thespacedevs.com/2.2.0';
 
-async function ll2(path, env) {
-  const res = await fetch(`${LL2}${path}`, {
-    cf: { cacheTtl: 3600 },
-    headers: { 'User-Agent': 'Orbit360/1.0 (personal dashboard)' },
-  });
+// LL2 throttles anonymous traffic to ~15 requests/hour and answers 429 once you
+// cross it — and Cloudflare's shared egress IP can hit that ceiling collectively.
+// Two defences:
+//   1. Optional auth: set the LL2_API_KEY secret (a free The Space Devs account)
+//      to lift the limit; the header is sent only when the key is present.
+//   2. Shared backoff: the first 429 parks all LL2 calls in KV for a cool-off
+//      window so a cold-cache request storm can't keep burning the quota.
+const LL2_BACKOFF_KEY = 'll2:backoff-until';
+const LL2_BACKOFF_MS = 20 * 60e3; // cool off ~20 min after a throttle
+
+async function ll2BackedOff(env) {
+  const until = await env.ORBIT_KV.get(LL2_BACKOFF_KEY);
+  return until != null && Date.now() < Number(until);
+}
+
+// LL2 burst-throttles: three near-simultaneous calls (the parallel snapshot build
+// fires that many) can get one 429 even when spaced single calls are fine. Funnel
+// every call through a single-file queue with a small gap so a cold cache rebuild
+// doesn't trip the limiter on itself.
+let ll2Queue = Promise.resolve();
+const LL2_GAP_MS = 300;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function ll2(path, env) {
+  const run = () => ll2Fetch(path, env);
+  const result = ll2Queue.then(run, run);          // chain regardless of prior outcome
+  ll2Queue = result.then(() => sleep(LL2_GAP_MS), () => sleep(LL2_GAP_MS)); // space the next
+  return result;
+}
+
+async function ll2Fetch(path, env) {
+  // don't even open a socket while we're in a throttle cool-off
+  if (await ll2BackedOff(env)) throw new Error('LL2 backoff');
+
+  const headers = { 'User-Agent': 'Orbit360/1.0 (personal dashboard)' };
+  if (env.LL2_API_KEY) headers['Authorization'] = `Token ${env.LL2_API_KEY}`;
+
+  const res = await fetch(`${LL2}${path}`, { cf: { cacheTtl: 3600 }, headers });
+  if (res.status === 429) {
+    await env.ORBIT_KV.put(LL2_BACKOFF_KEY, String(Date.now() + LL2_BACKOFF_MS),
+      { expirationTtl: Math.ceil(LL2_BACKOFF_MS / 1000) + 5 });
+    throw new Error('LL2 429 (throttled)');
+  }
   if (!res.ok) throw new Error(`LL2 ${res.status}`);
   return res.json();
 }
@@ -59,14 +97,18 @@ async function ll2(path, env) {
 export async function getLaunchOps(env) {
   const cacheKey = 'launchops:latest';
   const cached = await env.ORBIT_KV.get(cacheKey, 'json');
-  if (cached && Date.now() - cached.fetchedAt < 3 * 3600e3) return cached;
+  // serve cache only if it's fresh AND actually has data; an empty cache (from a
+  // throttled fetch) must not block a retry.
+  if (cached && cached.ytd > 0 && Date.now() - cached.fetchedAt < 3 * 3600e3) return cached;
 
   const yearStart = `${new Date().getFullYear()}-01-01T00:00:00Z`;
   let ytd = 0, success = 0, failure = 0, lastLaunch = null, nextLaunch = null;
+  let ok = false;
 
   try {
     // recent SpaceX launches this year (agency id 121 = SpaceX in LL2)
     const past = await ll2(`/launch/?lsp__id=121&net__gte=${encodeURIComponent(yearStart)}&limit=100&mode=list&ordering=-net`, env);
+    ok = true;
     for (const l of past.results || []) {
       ytd++;
       const s = (l.status?.abbrev || l.status?.name || '').toLowerCase();
@@ -83,6 +125,13 @@ export async function getLaunchOps(env) {
     const n = (upcoming.results || [])[0];
     if (n) nextLaunch = { name: n.name, net: n.net, pad: n.pad?.name };
   } catch (_) {}
+
+  // LL2 unreachable/throttled — keep the last good figures rather than zeroing the card.
+  if (!ok && cached && cached.ytd > 0) {
+    const kept = { ...cached, stale: true, fetchedAt: Date.now() };
+    await env.ORBIT_KV.put(cacheKey, JSON.stringify(kept), { expirationTtl: 43200 });
+    return kept;
+  }
 
   const daysSinceLast = lastLaunch
     ? Math.floor((Date.now() - new Date(lastLaunch.net).getTime()) / 864e5)
@@ -145,8 +194,9 @@ export async function getAllLaunches(env) {
   const cacheKey = 'launches:upcoming';
   const cached = await env.ORBIT_KV.get(cacheKey, 'json');
   // serve a cached list only if it's fresh AND non-empty; an empty cache (from a
-  // throttled fetch) must not block a retry.
-  if (cached && cached.launches?.length && Date.now() - cached.fetchedAt < 1800e3) return cached;
+  // throttled fetch) must not block a retry. 60-min window keeps steady-state LL2
+  // load to ~1 call/hr from the manifest.
+  if (cached && cached.launches?.length && Date.now() - cached.fetchedAt < 3600e3) return cached;
 
   let launches = [];
   try {
