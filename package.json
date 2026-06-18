@@ -2,11 +2,35 @@
   "name": "orbit360",
   "version": "1.0.0",
   "private": true,
-  "description": "A single-pane flight-ops console for SpaceX and its public-market ecosystem. Zero npm dependencies — deploys with global wrangler.",
+  "description": "A single-pane flight-ops console for SpaceX and its public-market ecosystem. Zero runtime dependencies — deploys with global wrangler.",
   "type": "module",
+  "license": "MIT",
+  "author": "Samuel Odekunle",
+  "homepage": "https://github.com/lordpixma/orbit360#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lordpixma/orbit360.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lordpixma/orbit360/issues"
+  },
+  "keywords": [
+    "spacex",
+    "starlink",
+    "dashboard",
+    "cloudflare-workers",
+    "finance",
+    "space",
+    "launch-tracking",
+    "serverless"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "test": "node --test"
   }
 }
