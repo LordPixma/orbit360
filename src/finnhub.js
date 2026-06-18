@@ -94,7 +94,8 @@ export async function getNews(env, days = 4) {
 }
 
 // Lightweight, transparent tagging so the feed is filterable by what drives price.
-function classify(text) {
+// Exported for testing.
+export function classify(text) {
   const t = text.toLowerCase();
   if (/launch|falcon|starship|liftoff|booster|scrub/.test(t)) return 'launch';
   if (/contract|award|nasa|space force|nro|starshield|pentagon/.test(t)) return 'contract';

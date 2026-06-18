@@ -130,7 +130,8 @@ function annotate(item) {
   };
 }
 
-function detectKind(text) {
+// Exported for testing.
+export function detectKind(text) {
   const s = text.toLowerCase();
   if (/relocat|shift|moving|move[ds]?|diversif|outside taiwan|out of taiwan|new (factory|plant|line)|expand|expansion|ramp|capacity|incentive|courts?|set(s|ting)? up|opens? (a )?(factory|plant)|build(s|ing)? (a )?(factory|plant)/.test(s)) return 'shift';
   if (/disrupt|halt|shortage|tension|tariff|earthquake|seiz|concentrat|chokepoint|risk|blockade/.test(s)) return 'risk';
@@ -139,7 +140,8 @@ function detectKind(text) {
 
 // Designate Taiwan as the origin when present; the other named place is the
 // destination. Otherwise take the first two places in mention order.
-function detectPlaces(text) {
+// Exported for testing.
+export function detectPlaces(text) {
   const found = [];
   for (const [re, name] of PLACES) if (re.test(text) && !found.includes(name)) found.push(name);
   let from = null, to = null;
