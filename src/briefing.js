@@ -94,7 +94,8 @@ export async function generateNarrative(env, snap) {
 
 // --- the deterministic diff --------------------------------------------------
 
-function diffDigests(t, p) {
+// Exported for testing.
+export function diffDigests(t, p) {
   if (!p) {
     return [{ tone: 'info', label: 'Baseline',
       text: 'First day of history logged — from tomorrow this briefing compares against the prior session.' }];

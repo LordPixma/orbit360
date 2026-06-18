@@ -9,16 +9,16 @@ directory = "./public"
 binding = "ASSETS"
 
 # Cache + history store. Create with:  wrangler kv namespace create ORBIT_KV
-# then paste the id below.
+# then paste the id it prints below.
 [[kv_namespaces]]
 binding = "ORBIT_KV"
-id = "d840bf219e6c4b1d95ed43ef4e8c03c3"
+id = "<your-kv-namespace-id>"
 
 # Native email alerts (free). Requires Email Routing enabled on the domain and
 # the destination address verified in the Cloudflare dashboard.
 [[send_email]]
 name = "SEND_EMAIL"
-destination_address = "samuel@mustardtreegroup.com"
+destination_address = "you@example.com"
 
 # Optional AI briefing (OFF by default). Uncomment to let the cron write a
 # 2-3 sentence "what changed since yesterday" narrative with Cloudflare Workers
@@ -34,8 +34,8 @@ crons = ["*/10 * * * *"]
 [vars]
 # ALERT_FROM must be on a domain you control on Cloudflare.
 # ALERT_TO must equal the verified destination address above.
-ALERT_FROM = "orbit360@mustardtreegroup.com"
-ALERT_TO = "samuel@mustardtreegroup.com"
+ALERT_FROM = "orbit360@example.com"
+ALERT_TO = "you@example.com"
 
 # NOTE: FINNHUB_API_KEY is a SECRET — never put it here. Set it with:
 #   wrangler secret put FINNHUB_API_KEY
