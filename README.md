@@ -12,6 +12,10 @@ complex — financial *and* operational.
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
 ![Runtime dependencies: 0](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
 
+<img src="docs/screenshot.jpeg" alt="The Orbit360 dashboard — a dark mission-control console showing the daily briefing, market panel, the SpaceX Pulse gauge, launch ops with a live T-minus, the global launch manifest, constellation count, ecosystem-heat treemap, and the regulatory and supply-chain radars." width="100%">
+
+<sub>The live board — operational health, launches, the constellation, contracts, and the regulatory &amp; supply-chain radars, all on one screen.</sub>
+
 </div>
 
 > **Thesis:** every dashboard monitors the stock. SpaceX's real fundamentals are
@@ -54,9 +58,6 @@ has zero runtime dependencies.**
 
 The board is a responsive 12-column grid on a dark "mission-control" theme. Top
 to bottom, here is exactly what it renders.
-
-<!-- Tip: add a screenshot of the deployed board here. To preview without
-     deploying, open public/index.html directly — it renders in sample mode. -->
 
 ### Header — status strip
 
