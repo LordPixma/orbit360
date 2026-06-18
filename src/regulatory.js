@@ -99,7 +99,8 @@ function annotate(item) {
   };
 }
 
-function detectDirection(text) {
+// Exported for testing.
+export function detectDirection(text) {
   const s = text.toLowerCase();
   // "ban lifted / reversed / ended" is approval-side — check before the ban words
   if (/(ban|suspension|block)\w*.{0,16}(lift|revers|end|overturn)/.test(s) || /lift(s|ed)?\s+(its\s+)?ban/.test(s)) return 'positive';
@@ -108,7 +109,8 @@ function detectDirection(text) {
   return 'neutral';
 }
 
-function detectCountry(text) {
+// Exported for testing.
+export function detectCountry(text) {
   for (const [re, name] of COUNTRY_PATTERNS) if (re.test(text)) return name;
   return null;
 }

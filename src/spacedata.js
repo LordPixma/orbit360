@@ -196,7 +196,8 @@ const PROVIDER_SHORT = {
   'Relativity Space': 'Relativity',
 };
 
-function shortProvider(name) {
+// Exported for testing.
+export function shortProvider(name) {
   if (!name) return null;
   if (PROVIDER_SHORT[name]) return PROVIDER_SHORT[name];
   // fall back to a trailing acronym in parentheses, e.g. "... (ESA)"
